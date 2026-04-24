@@ -1,16 +1,19 @@
 import React from "react";
+import { useRouter } from "expo-router";
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Dimensions
+  Dimensions,
 } from "react-native";
+
 
 const screenWidth = Dimensions.get("window").width;
 
 export default function App() {
+  const router = useRouter();
   return (
     <ScrollView style={styles.container}>
 
@@ -68,7 +71,7 @@ export default function App() {
         <Text style={styles.ctaTitle}>Comece hoje</Text>
 
         <TouchableOpacity style={styles.primaryButton}>
-          <Text style={styles.buttonText}>Criar conta grátis</Text>
+          <Text onPress={() => router.push("/cadastro")} style={styles.buttonText}>Criar Conta</Text>
         </TouchableOpacity>
       </View>
 
