@@ -1,4 +1,5 @@
 import React from "react";
+import{ useState } from 'react';
 import { useRouter } from "expo-router";
 import {
   View,
@@ -7,6 +8,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Dimensions,
+  Pressable
 } from "react-native";
 
 
@@ -14,6 +16,7 @@ const screenWidth = Dimensions.get("window").width;
 
 export default function App() {
   const router = useRouter();
+  const [hover, setHover] = useState(false);
   return (
     <ScrollView style={styles.container}>
 
@@ -87,13 +90,18 @@ type CardProps = {
 }
 
 function Card({ title, text }: CardProps) {
-  return (
-    <View style={styles.card}>
-      <Text style={styles.cardTitle}>{title}</Text>
+  const [hover, setHover] = useState(false);
 
+  return (
+    <Pressable
+      style={[styles.card, hover && styles.cardHover]}
+      onHoverIn={() => setHover(true)}
+      onHoverOut={() => setHover(false)}
+    >
+      <Text style={styles.cardTitle}>{title}</Text>
       {text && <Text style={styles.cardText}>{text}</Text>}
-    </View>
-  )
+    </Pressable>
+  );
 }
 
 const styles = StyleSheet.create({
@@ -147,7 +155,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#3EC8FF",
     padding: 12,
     borderRadius: 8,
-    margin: 5
+    margin: 5,
   },
 
   secondaryButton: {
@@ -163,7 +171,8 @@ const styles = StyleSheet.create({
   },
 
   secondaryText: {
-    color: "#000"
+    color: "#000",
+    fontWeight: "bold"
   },
 
   section: {
@@ -174,7 +183,7 @@ const styles = StyleSheet.create({
     color: "#FFF",
     fontSize: 22,
     fontWeight: "bold",
-    marginBottom: 20
+    marginBottom: 25
   },
 
   sectionWhite: {
@@ -192,7 +201,7 @@ const styles = StyleSheet.create({
   cards: {
     flexDirection: "row",
     flexWrap: "wrap",
-    justifyContent: "space-between"
+    justifyContent: "space-between",
   },
 
   services: {
@@ -208,7 +217,7 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 10,
     marginBottom: 15,
-    width: screenWidth * 0.42
+    width: screenWidth * 0.3
   },
 
   cardTitle: {
@@ -223,7 +232,6 @@ const styles = StyleSheet.create({
   },
 
   cta: {
-    padding: 40,
     alignItems: "center"
   },
 
@@ -231,6 +239,8 @@ const styles = StyleSheet.create({
     color: "#FFF",
     fontSize: 24,
     marginBottom: 20
+  },
+  cardHover: {
+  backgroundColor: "#3EC8FF",
   }
-
 });
