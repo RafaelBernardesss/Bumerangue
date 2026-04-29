@@ -8,13 +8,14 @@ import {
   TextInput,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function App() {
   const router = useRouter();
   const [menuAberto, setMenuAberto] = useState(false);
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       {/* BOTÃO HAMBURGUER */}
       <TouchableOpacity
         style={styles.menuBtn}
@@ -88,7 +89,7 @@ export default function App() {
           <Text style={styles.login}>Já tenho uma conta</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
