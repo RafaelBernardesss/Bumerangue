@@ -37,7 +37,7 @@ export default function App() {
           </Text>
 
           <View style={styles.heroButtons}>
-            <TouchableOpacity style={styles.primaryButton}>
+            <TouchableOpacity style={styles.primaryButton} onPress={() => router.push("/login")}>
               <Text style={styles.buttonText}>Oferecer serviço</Text>
             </TouchableOpacity>
 
@@ -70,18 +70,6 @@ export default function App() {
             <Card title="Fotografia" />
             <Card title="Edição de vídeo" />
           </View>
-        </View>
-
-        {/* CTA */}
-        <View style={styles.cta}>
-          <Text style={styles.ctaTitle}>Comece hoje</Text>
-
-          <TouchableOpacity
-            style={styles.primaryButton}
-            onPress={() => router.push("/cadastro")}
-          >
-            <Text style={styles.buttonText}>Criar Conta</Text>
-          </TouchableOpacity>
         </View>
       </ScrollView>
     </SafeAreaView>

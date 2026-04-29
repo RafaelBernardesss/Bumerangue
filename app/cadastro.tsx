@@ -30,19 +30,19 @@ export default function App() {
           <TouchableOpacity
             onPress={() => {
               setMenuAberto(false);
-              router.push("/login");
+              router.push("/perfil");
             }}
           >
-            <Text style={styles.itemMenu}>Login</Text>
+            <Text style={styles.itemMenu}>Perfil</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             onPress={() => {
               setMenuAberto(false);
-              router.push("/cadastro");
+              router.push("/ajuda");
             }}
           >
-            <Text style={styles.itemMenu}>Cadastro</Text>
+            <Text style={styles.itemMenu}>Ajuda</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
