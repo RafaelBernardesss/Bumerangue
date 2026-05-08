@@ -45,7 +45,7 @@ export default function Cadastro() {
               router.push("/menu");
             }}
           >
-            <Ionicons name="restaurant-outline" size={20} color="#3EC8FF" />
+            <Ionicons name="home-outline" size={20} color="#3EC8FF" />
             <Text style={styles.itemMenuText}>Menu</Text>
           </TouchableOpacity>
 
