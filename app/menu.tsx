@@ -37,7 +37,7 @@ export default function App() {
           </Text>
 
           <View style={styles.heroButtons}>
-            <TouchableOpacity style={styles.primaryButton} onPress={() => router.push("/login")}>
+            <TouchableOpacity style={styles.primaryButton} onPress={() => router.push("/escolha")}>
               <Text style={styles.buttonText}>Oferecer serviço</Text>
             </TouchableOpacity>
 
