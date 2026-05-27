@@ -50,7 +50,7 @@ export default function App() {
               onPress={() => router.push("/escolha")}
             >
               <Text style={styles.buttonText}>
-                Oferecer serviço
+                Entrar
               </Text>
             </TouchableOpacity>
 
