@@ -5,7 +5,7 @@ import { View } from "react-native";
 export default function Pesquisa() {
     return (
         <View style={styles.pesquisa}>
-            <Ionicons name="search" size={20} color="#00ff88" />
+            <Ionicons style={styles.icone} name="search" size={20} color="#00ff88" />
             <TextInput
                 placeholder="Buscar serviços ..."
                 placeholderTextColor="#888"
@@ -27,9 +27,16 @@ const styles = StyleSheet.create({
         paddingHorizontal: 15,
         height: 50,
         borderWidth: 1,
-        borderColor: "#00ff88"
+        borderColor: "#D7D9DF"
     },
     textoPesquisa:{
-
-    }
+      flex:1,
+      color: "#fff",
+      marginLeft: 10,
+      borderWidth: 0,
+      borderColor: "#D7D9DF"
+    },
+    icone:{
+      color: "#D7D9DF"
+    },
 })
