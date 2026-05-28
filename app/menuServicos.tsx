@@ -16,10 +16,19 @@ import { ScrollView } from "react-native";
 
 export default function MenuServico (){
   return(
-    <SafeAreaView>
+    <SafeAreaView style={{ flex:1, backgroundColor:"#050B14"}}>
+      <Text style={styles.text1}>Ola, Usuario</Text>
       <Text>FUNCIONANDO COM SUCESSO</Text>
-      <Pesquisa></Pesquisa>
+      <Pesquisa/>
+      
 
     </SafeAreaView>
   )
 }
+
+const styles = StyleSheet.create({
+
+  text1:{
+
+  },
+})

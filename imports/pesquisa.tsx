@@ -19,24 +19,25 @@ export default function Pesquisa() {
 
 
 const styles = StyleSheet.create({
-    pesquisa:{
+    pesquisa: {
         flexDirection: "row",
         alignItems: "center",
         backgroundColor: "#1E1E1E",
-        borderRadius: 12,
+        borderRadius: 8,
         paddingHorizontal: 15,
-        height: 50,
+        height: 40,
         borderWidth: 1,
+        borderColor: "#D7D9DF",
+        width:300,
+    },
+    textoPesquisa: {
+        flex: 1,
+        color: "#fff",
+        marginLeft: 10,
+        borderWidth: 0,
         borderColor: "#D7D9DF"
     },
-    textoPesquisa:{
-      flex:1,
-      color: "#fff",
-      marginLeft: 10,
-      borderWidth: 0,
-      borderColor: "#D7D9DF"
-    },
-    icone:{
-      color: "#D7D9DF"
+    icone: {
+        color: "#D7D9DF"
     },
 })
