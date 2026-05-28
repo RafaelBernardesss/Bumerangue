@@ -9,7 +9,7 @@ import {
   Pressable,
   Image,
 } from "react-native";
-import Pesquisa from "../imports/pesquisa.tsx";
+import Pesquisa from "../imports/pesquisa";
 
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ScrollView } from "react-native";
