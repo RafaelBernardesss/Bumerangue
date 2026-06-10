@@ -11,4 +11,5 @@ model Usuario {
   nome   String
   email  String @unique
   senha  String
+  cpf    String @unique
 }
