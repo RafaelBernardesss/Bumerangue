@@ -6,22 +6,82 @@ import {
   StyleSheet,
   TouchableOpacity,
   TextInput,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function Cadastro() {
   const router = useRouter();
-  const [menuAberto, setMenuAberto] = useState(false);
+
+  const [menuAberto, setMenuAberto] =
+    useState(false);
+
+  const [cpf, setCpf] =
+    useState("");
+
+  const [senha, setSenha] =
+    useState("");
+
+  async function fazerLogin() {
+    try {
+      const response = await fetch(
+        "http://172.30.0.110:3000/usuarios/login",
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
+
+          body: JSON.stringify({
+            cpf,
+            senha,
+          }),
+        }
+      );
+
+      const data =
+        await response.json();
+
+      if (response.ok) {
+        Alert.alert(
+          "Sucesso",
+          "Login realizado!"
+        );
+
+        router.push("/anuncios");
+      } else {
+        Alert.alert(
+          "Erro",
+          data.erro
+        );
+      }
+    } catch (error) {
+      console.log(error);
+
+      Alert.alert(
+        "Erro",
+        "Não foi possível conectar ao servidor"
+      );
+    }
+  }
 
   return (
     <SafeAreaView style={styles.container}>
       {/* MENU HAMBURGUER */}
       <TouchableOpacity
         style={styles.menuBtn}
-        onPress={() => setMenuAberto(!menuAberto)}
+        onPress={() =>
+          setMenuAberto(!menuAberto)
+        }
       >
-        <Ionicons name="menu" size={28} color="#3EC8FF" />
+        <Ionicons
+          name="menu"
+          size={28}
+          color="#3EC8FF"
+        />
       </TouchableOpacity>
 
       {/* MENU LATERAL */}
@@ -34,8 +94,16 @@ export default function Cadastro() {
               router.push("/perfil");
             }}
           >
-            <Ionicons name="person-outline" size={20} color="#3EC8FF" />
-            <Text style={styles.itemMenuText}>Perfil</Text>
+            <Ionicons
+              name="person-outline"
+              size={20}
+              color="#3EC8FF"
+            />
+            <Text
+              style={styles.itemMenuText}
+            >
+              Perfil
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -45,8 +113,16 @@ export default function Cadastro() {
               router.push("/menu");
             }}
           >
-            <Ionicons name="home-outline" size={20} color="#3EC8FF" />
-            <Text style={styles.itemMenuText}>Menu</Text>
+            <Ionicons
+              name="home-outline"
+              size={20}
+              color="#3EC8FF"
+            />
+            <Text
+              style={styles.itemMenuText}
+            >
+              Menu
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -56,16 +132,34 @@ export default function Cadastro() {
               router.push("/ajuda");
             }}
           >
-            <Ionicons name="help-circle-outline" size={20} color="#3EC8FF" />
-            <Text style={styles.itemMenuText}>Ajuda</Text>
+            <Ionicons
+              name="help-circle-outline"
+              size={20}
+              color="#3EC8FF"
+            />
+            <Text
+              style={styles.itemMenuText}
+            >
+              Ajuda
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.itemMenu}
-            onPress={() => setMenuAberto(false)}
+            onPress={() =>
+              setMenuAberto(false)
+            }
           >
-            <Ionicons name="close-outline" size={20} color="#3EC8FF" />
-            <Text style={styles.itemMenuText}>Fechar</Text>
+            <Ionicons
+              name="close-outline"
+              size={20}
+              color="#3EC8FF"
+            />
+            <Text
+              style={styles.itemMenuText}
+            >
+              Fechar
+            </Text>
           </TouchableOpacity>
         </View>
       )}
@@ -73,44 +167,78 @@ export default function Cadastro() {
       {/* CONTEÚDO */}
       <View style={styles.formContainer}>
         {/* Avatar */}
-        <View style={styles.avatarContainer}>
+        <View
+          style={styles.avatarContainer}
+        >
           <View style={styles.avatar}>
-            <Ionicons name="person-outline" size={36} color="#fff" />
+            <Ionicons
+              name="person-outline"
+              size={36}
+              color="#fff"
+            />
           </View>
         </View>
 
-        <Text style={styles.title}>Logar</Text>
+        <Text style={styles.title}>
+          Logar
+        </Text>
+
         <Text style={styles.subtitle}>
           Conecte a sua conta
         </Text>
 
+        {/* CPF */}
+        <Text style={styles.label}>
+          CPF
+        </Text>
 
-        <Text style={styles.label}>CPF</Text>
         <TextInput
           style={styles.input}
           placeholder="000.000.000-00"
           placeholderTextColor="#777"
+          keyboardType="numeric"
+          value={cpf}
+          onChangeText={setCpf}
         />
 
-        <Text style={styles.label}>Senha</Text>
+        {/* SENHA */}
+        <Text style={styles.label}>
+          Senha
+        </Text>
+
         <TextInput
           style={styles.input}
           placeholder="******"
           placeholderTextColor="#777"
           secureTextEntry
+          value={senha}
+          onChangeText={setSenha}
         />
 
-        {/* BOTÃO */}
-        <TouchableOpacity style={styles.botaoPrimario}>
-          <Text style={styles.botaoTexto}>Entrar</Text>
+        {/* BOTÃO LOGIN */}
+        <TouchableOpacity
+          style={styles.botaoPrimario}
+          onPress={fazerLogin}
+        >
+          <Text
+            style={styles.botaoTexto}
+          >
+            Entrar
+          </Text>
         </TouchableOpacity>
 
-        {/* LOGIN */}
+        {/* IR PARA CADASTRO */}
         <TouchableOpacity
           style={styles.botaoSecundario}
-          onPress={() => router.push("/cadastro")}
+          onPress={() =>
+            router.push("/cadastro")
+          }
         >
-          <Text style={styles.botaoSecundarioTexto}>
+          <Text
+            style={
+              styles.botaoSecundarioTexto
+            }
+          >
             Não tenho uma conta
           </Text>
         </TouchableOpacity>
@@ -154,7 +282,8 @@ const styles = StyleSheet.create({
     zIndex: 100,
     padding: 10,
     borderRadius: 50,
-    backgroundColor: "rgba(62,200,255,0.1)",
+    backgroundColor:
+      "rgba(62,200,255,0.1)",
   },
 
   menuLateral: {
