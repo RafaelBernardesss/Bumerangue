@@ -8,10 +8,11 @@ import {
   TouchableOpacity,
   Image,
 } from "react-native";
-
+import { useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 
 export default function Home() {
+  const {name} = useLocalSearchParams();
   const servicos = [
     {
       titulo: "Criação de Sites",
@@ -42,6 +43,8 @@ export default function Home() {
     },
   ];
 
+  
+
   return (
     <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -63,7 +66,7 @@ export default function Home() {
         {/* BOAS VINDAS */}
         <View style={styles.welcomeContainer}>
           <View style={{ flex: 1 }}>
-            <Text style={styles.title}>Olá, Usuario!</Text>
+            <Text style={styles.title}>Olá, {name}</Text>
 
             <Text style={styles.subtitle}>
               Bem-vindo de volta! Encontre serviços incríveis ou ofereça sua
