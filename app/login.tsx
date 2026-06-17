@@ -23,10 +23,23 @@ export default function Cadastro() {
   const [senha, setSenha] =
     useState("");
 
+  //formatação de cpf
+  function formatarCPF(texto = "") {
+    let cpf = texto.replace(/\D/g, "");
+
+    cpf = cpf.slice(0, 11);
+
+    cpf = cpf.replace(/(\d{3})(\d)/, "$1.$2");
+    cpf = cpf.replace(/(\d{3})(\d)/, "$1.$2");
+    cpf = cpf.replace(/(\d{3})(\d{1,2})/, "$1-$2");
+
+    return cpf;
+  }
+
   async function fazerLogin() {
     try {
       const response = await fetch(
-        "http://172.30.0.110:3000/usuarios/login",
+        "http://172.30.0.150:3000/usuarios/login",
         {
           method: "POST",
 
@@ -198,7 +211,7 @@ export default function Cadastro() {
           placeholderTextColor="#777"
           keyboardType="numeric"
           value={cpf}
-          onChangeText={setCpf}
+          onChangeText={(text) => setCpf(formatarCPF(text))}
         />
 
         {/* SENHA */}

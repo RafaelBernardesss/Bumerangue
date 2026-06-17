@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
+import ValidarCpf from "../services/ValidarCpf";
 
 export default function Cadastro() {
   const router = useRouter();
@@ -21,16 +22,47 @@ export default function Cadastro() {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
 
+  //formatar o cpf
+  function formatarCPF(texto ="") {
+  let cpf = texto.replace(/\D/g, "");
+
+  cpf = cpf.slice(0, 11);
+
+  cpf = cpf.replace(/(\d{3})(\d)/, "$1.$2");
+  cpf = cpf.replace(/(\d{3})(\d)/, "$1.$2");
+  cpf = cpf.replace(/(\d{3})(\d{1,2})/, "$1-$2");
+
+  return cpf;
+}
+
+// função para cadastrar
   async function cadastrar() {
+    // Verifica se todos os campos foram preenchidos
+    if (!nome || !cpf || !email || !senha) {
+      Alert.alert(
+        "Campos obrigatórios",
+        "Preencha todos os campos."
+      );
+      return;
+    }
+
+    // Valida o CPF
+    if (!ValidarCpf(cpf)) {
+      Alert.alert(
+        "CPF inválido",
+        "Por favor, insira um CPF válido."
+      );
+      return;
+    }
+
     try {
       const response = await fetch(
-        "http://172.30.0.110:3000/usuarios/cadastro",
+        "http://172.30.0.150:3000/usuarios/cadastro",
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-
           body: JSON.stringify({
             nome,
             cpf,
@@ -48,16 +80,26 @@ export default function Cadastro() {
           "Conta criada com sucesso!"
         );
 
+        // Limpa os campos
+        setNome("");
+        setCpf("");
+        setEmail("");
+        setSenha("");
+
+        // Vai para a tela de login
         router.push("/login");
       } else {
-        Alert.alert("Erro", data.erro);
+        Alert.alert(
+          "Erro",
+          data.erro || "Não foi possível criar a conta."
+        );
       }
     } catch (error) {
       console.log(error);
 
       Alert.alert(
         "Erro",
-        "Não foi possível conectar ao servidor"
+        "Não foi possível conectar ao servidor."
       );
     }
   }
@@ -193,7 +235,7 @@ export default function Cadastro() {
           placeholderTextColor="#777"
           keyboardType="numeric"
           value={cpf}
-          onChangeText={setCpf}
+          onChangeText={(text) => setCpf(formatarCPF(text))}
         />
 
         <Text style={styles.label}>
