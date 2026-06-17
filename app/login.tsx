@@ -14,14 +14,11 @@ import { SafeAreaView } from "react-native-safe-area-context";
 export default function Cadastro() {
   const router = useRouter();
 
-  const [menuAberto, setMenuAberto] =
-    useState(false);
+  const [menuAberto, setMenuAberto] = useState(false);
 
-  const [cpf, setCpf] =
-    useState("");
+  const [cpf, setCpf] = useState("");
 
-  const [senha, setSenha] =
-    useState("");
+  const [senha, setSenha] = useState("");
 
   //formatação de cpf
   function formatarCPF(texto = "") {
@@ -42,12 +39,9 @@ export default function Cadastro() {
         "http://172.30.0.150:3000/usuarios/login",
         {
           method: "POST",
-
           headers: {
-            "Content-Type":
-              "application/json",
+            "Content-Type": "application/json",
           },
-
           body: JSON.stringify({
             cpf,
             senha,
@@ -55,29 +49,21 @@ export default function Cadastro() {
         }
       );
 
-      const data =
-        await response.json();
+      const data = await response.json();
 
       if (response.ok) {
-        Alert.alert(
-          "Sucesso",
-          "Login realizado!"
-        );
+        Alert.alert("Sucesso", "Login realizado!");
 
-        router.push("/anuncios");
+        router.push({
+          pathname: "/anuncios",
+          params: { name: data.usuario.nome },
+        });
       } else {
-        Alert.alert(
-          "Erro",
-          data.erro
-        );
+        Alert.alert("Erro", data.erro);
       }
     } catch (error) {
       console.log(error);
-
-      Alert.alert(
-        "Erro",
-        "Não foi possível conectar ao servidor"
-      );
+      Alert.alert("Erro", "Não foi possível conectar ao servidor");
     }
   }
 
@@ -86,15 +72,9 @@ export default function Cadastro() {
       {/* MENU HAMBURGUER */}
       <TouchableOpacity
         style={styles.menuBtn}
-        onPress={() =>
-          setMenuAberto(!menuAberto)
-        }
+        onPress={() => setMenuAberto(!menuAberto)}
       >
-        <Ionicons
-          name="menu"
-          size={28}
-          color="#3EC8FF"
-        />
+        <Ionicons name="menu" size={28} color="#3EC8FF" />
       </TouchableOpacity>
 
       {/* MENU LATERAL */}
@@ -107,16 +87,8 @@ export default function Cadastro() {
               router.push("/perfil");
             }}
           >
-            <Ionicons
-              name="person-outline"
-              size={20}
-              color="#3EC8FF"
-            />
-            <Text
-              style={styles.itemMenuText}
-            >
-              Perfil
-            </Text>
+            <Ionicons name="person-outline" size={20} color="#3EC8FF" />
+            <Text style={styles.itemMenuText}>Perfil</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -126,16 +98,8 @@ export default function Cadastro() {
               router.push("/menu");
             }}
           >
-            <Ionicons
-              name="home-outline"
-              size={20}
-              color="#3EC8FF"
-            />
-            <Text
-              style={styles.itemMenuText}
-            >
-              Menu
-            </Text>
+            <Ionicons name="home-outline" size={20} color="#3EC8FF" />
+            <Text style={styles.itemMenuText}>Menu</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -145,34 +109,16 @@ export default function Cadastro() {
               router.push("/ajuda");
             }}
           >
-            <Ionicons
-              name="help-circle-outline"
-              size={20}
-              color="#3EC8FF"
-            />
-            <Text
-              style={styles.itemMenuText}
-            >
-              Ajuda
-            </Text>
+            <Ionicons name="help-circle-outline" size={20} color="#3EC8FF" />
+            <Text style={styles.itemMenuText}>Ajuda</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.itemMenu}
-            onPress={() =>
-              setMenuAberto(false)
-            }
+            onPress={() => setMenuAberto(false)}
           >
-            <Ionicons
-              name="close-outline"
-              size={20}
-              color="#3EC8FF"
-            />
-            <Text
-              style={styles.itemMenuText}
-            >
-              Fechar
-            </Text>
+            <Ionicons name="close-outline" size={20} color="#3EC8FF" />
+            <Text style={styles.itemMenuText}>Fechar</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -180,30 +126,18 @@ export default function Cadastro() {
       {/* CONTEÚDO */}
       <View style={styles.formContainer}>
         {/* Avatar */}
-        <View
-          style={styles.avatarContainer}
-        >
+        <View style={styles.avatarContainer}>
           <View style={styles.avatar}>
-            <Ionicons
-              name="person-outline"
-              size={36}
-              color="#fff"
-            />
+            <Ionicons name="person-outline" size={36} color="#fff" />
           </View>
         </View>
 
-        <Text style={styles.title}>
-          Logar
-        </Text>
+        <Text style={styles.title}>Logar</Text>
 
-        <Text style={styles.subtitle}>
-          Conecte a sua conta
-        </Text>
+        <Text style={styles.subtitle}>Conecte a sua conta</Text>
 
         {/* CPF */}
-        <Text style={styles.label}>
-          CPF
-        </Text>
+        <Text style={styles.label}>CPF</Text>
 
         <TextInput
           style={styles.input}
@@ -215,9 +149,7 @@ export default function Cadastro() {
         />
 
         {/* SENHA */}
-        <Text style={styles.label}>
-          Senha
-        </Text>
+        <Text style={styles.label}>Senha</Text>
 
         <TextInput
           style={styles.input}
@@ -229,29 +161,16 @@ export default function Cadastro() {
         />
 
         {/* BOTÃO LOGIN */}
-        <TouchableOpacity
-          style={styles.botaoPrimario}
-          onPress={fazerLogin}
-        >
-          <Text
-            style={styles.botaoTexto}
-          >
-            Entrar
-          </Text>
+        <TouchableOpacity style={styles.botaoPrimario} onPress={fazerLogin}>
+          <Text style={styles.botaoTexto}>Entrar</Text>
         </TouchableOpacity>
 
         {/* IR PARA CADASTRO */}
         <TouchableOpacity
           style={styles.botaoSecundario}
-          onPress={() =>
-            router.push("/cadastro")
-          }
+          onPress={() => router.push("/cadastro")}
         >
-          <Text
-            style={
-              styles.botaoSecundarioTexto
-            }
-          >
+          <Text style={styles.botaoSecundarioTexto}>
             Não tenho uma conta
           </Text>
         </TouchableOpacity>
@@ -265,19 +184,16 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#0B0B0B",
   },
-
   formContainer: {
     flex: 1,
     alignItems: "center",
     paddingHorizontal: 24,
     paddingTop: 40,
   },
-
   avatarContainer: {
     alignItems: "center",
     marginBottom: 20,
   },
-
   avatar: {
     width: 72,
     height: 72,
@@ -287,7 +203,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     elevation: 10,
   },
-
   menuBtn: {
     position: "absolute",
     top: 50,
@@ -295,10 +210,8 @@ const styles = StyleSheet.create({
     zIndex: 100,
     padding: 10,
     borderRadius: 50,
-    backgroundColor:
-      "rgba(62,200,255,0.1)",
+    backgroundColor: "rgba(62,200,255,0.1)",
   },
-
   menuLateral: {
     position: "absolute",
     top: 100,
@@ -312,7 +225,6 @@ const styles = StyleSheet.create({
     borderColor: "#1E1E1E",
     elevation: 10,
   },
-
   itemMenu: {
     flexDirection: "row",
     alignItems: "center",
@@ -320,14 +232,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     borderRadius: 10,
   },
-
   itemMenuText: {
     color: "#E5E7EB",
     fontSize: 16,
     marginLeft: 10,
     fontWeight: "500",
   },
-
   title: {
     color: "#FFFFFF",
     fontSize: 28,
@@ -335,14 +245,12 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     textAlign: "center",
   },
-
   subtitle: {
     color: "#A1A1AA",
     fontSize: 14,
     marginBottom: 20,
     textAlign: "center",
   },
-
   label: {
     alignSelf: "flex-start",
     color: "#E5E7EB",
@@ -351,7 +259,6 @@ const styles = StyleSheet.create({
     marginBottom: 6,
     marginTop: 10,
   },
-
   input: {
     width: "100%",
     height: 48,
@@ -363,7 +270,6 @@ const styles = StyleSheet.create({
     borderColor: "#2A2A2A",
     marginBottom: 10,
   },
-
   botaoPrimario: {
     width: "100%",
     height: 50,
@@ -373,13 +279,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 10,
   },
-
   botaoTexto: {
     color: "#000",
     fontSize: 16,
     fontWeight: "600",
   },
-
   botaoSecundario: {
     width: "100%",
     height: 48,
@@ -390,7 +294,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 10,
   },
-
   botaoSecundarioTexto: {
     color: "#3EC8FF",
     fontSize: 14,

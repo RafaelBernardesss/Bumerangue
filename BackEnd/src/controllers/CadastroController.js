@@ -12,13 +12,14 @@ class UsuarioController {
                 });
             }
 
+            const cpfLimpo = cpf.replace(/\D/g, "");
+
             // Verificar email existente
             const emailExiste = await prisma.usuario.findUnique({
                 where: {
                     email
                 }
             });
-
             if (emailExiste) {
                 return res.status(400).json({
                     erro: "Email já cadastrado"
@@ -28,10 +29,9 @@ class UsuarioController {
             // Verificar CPF existente
             const cpfExiste = await prisma.usuario.findUnique({
                 where: {
-                    cpf
+                    cpf: cpfLimpo
                 }
             });
-
             if (cpfExiste) {
                 return res.status(400).json({
                     erro: "CPF já cadastrado"
@@ -43,7 +43,7 @@ class UsuarioController {
                 data: {
                     nome,
                     email,
-                    cpf,
+                    cpf: cpfLimpo,
                     senha
                 }
             });
@@ -52,10 +52,8 @@ class UsuarioController {
                 mensagem: "Usuário cadastrado com sucesso",
                 usuario
             });
-
         } catch (error) {
             console.log(error);
-
             return res.status(500).json({
                 erro: "Erro ao cadastrar usuário"
             });
