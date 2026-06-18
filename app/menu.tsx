@@ -311,7 +311,7 @@ const styles = StyleSheet.create({
 
 container:{
 flex:1,
-backgroundColor:"#050B18",
+backgroundColor: "#0B0B0B",
 },
 
 
@@ -335,6 +335,7 @@ fontWeight:"bold",
 
 
 hero:{
+
 margin:20,
 backgroundColor:"#0D1324",
 borderRadius:25,

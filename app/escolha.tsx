@@ -107,7 +107,7 @@ export default function Escolha() {
 const styles = StyleSheet.create({
 
     container: {
-        flex: 1,
+        flex:1,
         backgroundColor: "#0B0B0B",
     },
 

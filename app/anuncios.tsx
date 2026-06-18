@@ -18,7 +18,7 @@ export default function Home() {
 
   const [menuAberto, setMenuAberto] = useState(false);
   const [busca, setBusca] = useState("");
-  const [favoritos, setFavoritos] = useState([]);
+  const [favoritos, setFavoritos] = useState<string[]>([]);
 
   const servicos = [
     {
@@ -57,13 +57,14 @@ export default function Home() {
     (item.titulo + item.categoria).toLowerCase().includes(busca.toLowerCase())
   );
 
-  function alternarFavorito(titulo) {
-    setFavoritos((prev) =>
-      prev.includes(titulo)
-        ? prev.filter((t) => t !== titulo)
-       : [...prev, titulo]
-    );
-  }
+  function alternarFavorito(titulo: string) {
+  setFavoritos((prev: string[]) =>
+    prev.includes(titulo)
+      ? prev.filter((t: string) => t !== titulo)
+      : [...prev, titulo]
+  );
+}
+
 
   function abrirFiltros() {
     Alert.alert("Filtrar por categoria", "Escolha uma categoria", [
@@ -350,7 +351,7 @@ export default function Home() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#050B18",
+    backgroundColor: "#0B0B0B",
     paddingTop: 50,
   },
   header: {

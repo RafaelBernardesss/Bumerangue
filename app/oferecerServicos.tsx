@@ -168,7 +168,7 @@ export default function PublicarServico() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#050B16",
+    backgroundColor: "#0B0B0B",
     padding: 20,
   },
 
