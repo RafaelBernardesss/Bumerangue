@@ -36,7 +36,7 @@ export default function Cadastro() {
   async function fazerLogin() {
     try {
       const response = await fetch(
-        "http://172.30.0.150:3000/usuarios/login",
+        "http://172.30.1.80:3000/usuarios/login",
         {
           method: "POST",
           headers: {
@@ -224,6 +224,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#1E1E1E",
     elevation: 10,
+    zIndex: 100,
   },
   itemMenu: {
     flexDirection: "row",
