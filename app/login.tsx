@@ -10,6 +10,10 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+//components
+import Header from "../components/Hearder";
 
 export default function Cadastro() {
   const router = useRouter();
@@ -36,7 +40,7 @@ export default function Cadastro() {
   async function fazerLogin() {
     try {
       const response = await fetch(
-        "http://192.168.137.176:3000/usuarios/login",
+        "http://172.30.1.25:3000/usuarios/login",
         {
           method: "POST",
           headers: {

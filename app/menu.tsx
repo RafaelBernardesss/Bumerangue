@@ -10,7 +10,7 @@ import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-//importando componentes
+//importando componentes  
 import Header from "../components/Hearder";
 
 
@@ -57,7 +57,7 @@ export default function Home() {
             <View style={styles.statBox}>
 
               <Text style={styles.statNumber}>
-                8.12B
+                8 mil
               </Text>
 
               <Text style={styles.statLabel}>
@@ -71,7 +71,7 @@ export default function Home() {
             <View style={styles.statBox}>
 
               <Text style={styles.statNumber}>
-                39.3B
+                39 mil
               </Text>
 
               <Text style={styles.statLabel}>

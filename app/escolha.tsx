@@ -9,6 +9,7 @@ import {
 
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
+import MenuLateral from "@/components/MenuLateral";
 
 export default function Escolha() {
     const router = useRouter();
@@ -17,65 +18,10 @@ export default function Escolha() {
     return (
         <SafeAreaView style={styles.container}>
 
-            {/* MENU HAMBURGUER */}
-            <TouchableOpacity
-                style={styles.menuBtn}
-                onPress={() => setMenuAberto(!menuAberto)}
-            >
-                <Ionicons name="menu" size={28} color="#3EC8FF" />
-            </TouchableOpacity>
-
-            {/* MENU LATERAL */}
-            {menuAberto && (
-                <View style={styles.menuLateral}>
-
-                    <TouchableOpacity
-                        style={styles.itemMenu}
-                        onPress={() => {
-                            setMenuAberto(false);
-                            router.push("/perfil");
-                        }}
-                    >
-                        <Ionicons name="person-outline" size={20} color="#3EC8FF" />
-                        <Text style={styles.itemMenuText}>Perfil</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        style={styles.itemMenu}
-                        onPress={() => {
-                            setMenuAberto(false);
-                            router.push("/menu");
-                        }}
-                    >
-                        <Ionicons name="home-outline" size={20} color="#3EC8FF" />
-                        <Text style={styles.itemMenuText}>Menu</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        style={styles.itemMenu}
-                        onPress={() => {
-                            setMenuAberto(false);
-                            router.push("/ajuda");
-                        }}
-                    >
-                        <Ionicons
-                            name="help-circle-outline"
-                            size={20}
-                            color="#3EC8FF"
-                        />
-                        <Text style={styles.itemMenuText}>Ajuda</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        style={styles.itemMenu}
-                        onPress={() => setMenuAberto(false)}
-                    >
-                        <Ionicons name="close-outline" size={20} color="#3EC8FF" />
-                        <Text style={styles.itemMenuText}>Fechar</Text>
-                    </TouchableOpacity>
-
-                </View>
-            )}
+            <View style={styles.header}>
+                <MenuLateral></MenuLateral>
+            </View>
+            
 
              <View style={styles.avatarContainer}>
                       <View style={styles.avatar}>
@@ -109,6 +55,10 @@ const styles = StyleSheet.create({
     container: {
         flex:1,
         backgroundColor: "#0B0B0B",
+    },
+
+    hearder:{
+        
     },
 
     // CENTRALIZAÇÃO
