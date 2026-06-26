@@ -36,7 +36,7 @@ export default function Cadastro() {
   async function fazerLogin() {
     try {
       const response = await fetch(
-        "http://172.30.1.80:3000/usuarios/login",
+        "http://192.168.137.176:3000/usuarios/login",
         {
           method: "POST",
           headers: {

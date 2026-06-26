@@ -57,7 +57,7 @@ export default function Cadastro() {
 
     try {
       const response = await fetch(
-        "http://172.30.1.80:3000/usuarios/cadastro",
+        "http://192.168.137.176:3000/usuarios/cadastro",
         {
           method: "POST",
           headers: {

@@ -1,16 +1,18 @@
 import React from "react";
-import { 
+import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   ScrollView,
 } from "react-native";
-
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-
 import { SafeAreaView } from "react-native-safe-area-context";
+
+//importando componentes
+import Header from "../components/Hearder";
+
 
 
 export default function Home() {
@@ -26,17 +28,7 @@ export default function Home() {
         {/* HEADER */}
         <View style={styles.header}>
 
-          <Text style={styles.logo}>
-            Bumerangue
-          </Text>
-
-          <TouchableOpacity>
-            <Ionicons
-              name="menu"
-              size={34}
-              color="#fff"
-            />
-          </TouchableOpacity>
+          <Header></Header>
 
         </View>
 
@@ -196,7 +188,7 @@ export default function Home() {
 
 
 
-        <View style={{height:120}}/>
+        <View style={{ height: 120 }} />
 
       </ScrollView>
 
@@ -228,28 +220,28 @@ export default function Home() {
 function CategoryCard({
   icon,
   title
-}:any){
+}: any) {
 
-return(
+  return (
 
-<TouchableOpacity style={styles.card}>
-
-
-<Ionicons
-name={icon}
-size={34}
-color="#00AFFF"
-/>
+    <TouchableOpacity style={styles.card}>
 
 
-<Text style={styles.cardText}>
-{title}
-</Text>
+      <Ionicons
+        name={icon}
+        size={34}
+        color="#00AFFF"
+      />
 
 
-</TouchableOpacity>
+      <Text style={styles.cardText}>
+        {title}
+      </Text>
 
-)
+
+    </TouchableOpacity>
+
+  )
 
 }
 
@@ -258,46 +250,46 @@ color="#00AFFF"
 
 
 function Step({
-number,
-title,
-description
-}:any){
+  number,
+  title,
+  description
+}: any) {
 
 
-return(
+  return (
 
-<View style={styles.step}>
-
-
-<View style={styles.circle}>
-
-<Text style={styles.circleText}>
-{number}
-</Text>
-
-</View>
+    <View style={styles.step}>
 
 
+      <View style={styles.circle}>
 
-<View>
+        <Text style={styles.circleText}>
+          {number}
+        </Text>
 
-<Text style={styles.stepTitle}>
-{title}
-</Text>
-
-
-<Text style={styles.stepDescription}>
-{description}
-</Text>
-
-
-</View>
+      </View>
 
 
 
-</View>
+      <View>
 
-)
+        <Text style={styles.stepTitle}>
+          {title}
+        </Text>
+
+
+        <Text style={styles.stepDescription}>
+          {description}
+        </Text>
+
+
+      </View>
+
+
+
+    </View>
+
+  )
 
 }
 
@@ -309,220 +301,220 @@ return(
 const styles = StyleSheet.create({
 
 
-container:{
-flex:1,
-backgroundColor: "#0B0B0B",
-},
+  container: {
+    flex: 1,
+    backgroundColor: "#0B0B0B",
+  },
 
 
 
-header:{
-flexDirection:"row",
-justifyContent:"space-between",
-alignItems:"center",
-padding:20,
-},
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 20,
+  },
 
 
 
-logo:{
-color:"#00AFFF",
-fontSize:34,
-fontWeight:"bold",
-},
+  logo: {
+    color: "#00AFFF",
+    fontSize: 34,
+    fontWeight: "bold",
+  },
 
 
 
 
-hero:{
+  hero: {
 
-margin:20,
-backgroundColor:"#0D1324",
-borderRadius:25,
-padding:25,
-},
+    margin: 20,
+    backgroundColor: "#0D1324",
+    borderRadius: 25,
+    padding: 25,
+  },
 
 
 
-heroTitle:{
-color:"#fff",
-fontSize:32,
-fontWeight:"bold",
-},
+  heroTitle: {
+    color: "#fff",
+    fontSize: 32,
+    fontWeight: "bold",
+  },
 
 
 
-heroText:{
-color:"#999",
-fontSize:17,
-marginTop:12,
-lineHeight:25,
-},
+  heroText: {
+    color: "#999",
+    fontSize: 17,
+    marginTop: 12,
+    lineHeight: 25,
+  },
 
 
 
-stats:{
-flexDirection:"row",
-justifyContent:"space-around",
-marginTop:25,
-},
+  stats: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    marginTop: 25,
+  },
 
 
 
-statBox:{
-alignItems:"center",
-},
+  statBox: {
+    alignItems: "center",
+  },
 
 
 
-statNumber:{
-color:"#00AFFF",
-fontSize:28,
-fontWeight:"bold",
-},
+  statNumber: {
+    color: "#00AFFF",
+    fontSize: 28,
+    fontWeight: "bold",
+  },
 
 
 
-statLabel:{
-color:"#888",
-marginTop:5,
-},
+  statLabel: {
+    color: "#888",
+    marginTop: 5,
+  },
 
 
 
-heroButton:{
-backgroundColor:"#00AFFF",
-padding:16,
-borderRadius:15,
-marginTop:25,
-alignItems:"center",
-},
+  heroButton: {
+    backgroundColor: "#00AFFF",
+    padding: 16,
+    borderRadius: 15,
+    marginTop: 25,
+    alignItems: "center",
+  },
 
 
 
-heroButtonText:{
-color:"#000",
-fontSize:17,
-fontWeight:"bold",
-},
+  heroButtonText: {
+    color: "#000",
+    fontSize: 17,
+    fontWeight: "bold",
+  },
 
 
 
 
-sectionHeader:{
-flexDirection:"row",
-justifyContent:"space-between",
-paddingHorizontal:20,
-marginTop:25,
-},
+  sectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    marginTop: 25,
+  },
 
 
 
-sectionTitle:{
-color:"#fff",
-fontSize:28,
-fontWeight:"bold",
-},
+  sectionTitle: {
+    color: "#fff",
+    fontSize: 28,
+    fontWeight: "bold",
+  },
 
 
 
-link:{
-color:"#00AFFF",
-fontSize:17,
-},
+  link: {
+    color: "#00AFFF",
+    fontSize: 17,
+  },
 
 
 
 
-grid:{
-flexDirection:"row",
-flexWrap:"wrap",
-justifyContent:"space-around",
-marginTop:15,
-},
+  grid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-around",
+    marginTop: 15,
+  },
 
 
 
-card:{
-width:"42%",
-backgroundColor:"#0D1324",
-padding:25,
-borderRadius:20,
-alignItems:"center",
-marginBottom:15,
-},
+  card: {
+    width: "42%",
+    backgroundColor: "#0D1324",
+    padding: 25,
+    borderRadius: 20,
+    alignItems: "center",
+    marginBottom: 15,
+  },
 
 
 
-cardText:{
-color:"#fff",
-marginTop:12,
-fontSize:17,
-fontWeight:"600",
-},
+  cardText: {
+    color: "#fff",
+    marginTop: 12,
+    fontSize: 17,
+    fontWeight: "600",
+  },
 
 
 
 
-step:{
-flexDirection:"row",
-alignItems:"center",
-backgroundColor:"#0D1324",
-marginHorizontal:20,
-marginTop:15,
-padding:18,
-borderRadius:20,
-},
+  step: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#0D1324",
+    marginHorizontal: 20,
+    marginTop: 15,
+    padding: 18,
+    borderRadius: 20,
+  },
 
 
 
-circle:{
-width:45,
-height:45,
-borderRadius:30,
-backgroundColor:"#00AFFF",
-justifyContent:"center",
-alignItems:"center",
-marginRight:15,
-},
+  circle: {
+    width: 45,
+    height: 45,
+    borderRadius: 30,
+    backgroundColor: "#00AFFF",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 15,
+  },
 
 
 
-circleText:{
-fontWeight:"bold",
-fontSize:18,
-},
+  circleText: {
+    fontWeight: "bold",
+    fontSize: 18,
+  },
 
 
 
-stepTitle:{
-color:"#fff",
-fontSize:19,
-fontWeight:"bold",
-},
+  stepTitle: {
+    color: "#fff",
+    fontSize: 19,
+    fontWeight: "bold",
+  },
 
 
 
-stepDescription:{
-color:"#888",
-marginTop:5,
-},
+  stepDescription: {
+    color: "#888",
+    marginTop: 5,
+  },
 
 
 
 
-fab:{
-position:"absolute",
-right:20,
-bottom:30,
-width:70,
-height:70,
-borderRadius:40,
-backgroundColor:"#00AFFF",
-justifyContent:"center",
-alignItems:"center",
-elevation:8,
-},
+  fab: {
+    position: "absolute",
+    right: 20,
+    bottom: 30,
+    width: 70,
+    height: 70,
+    borderRadius: 40,
+    backgroundColor: "#00AFFF",
+    justifyContent: "center",
+    alignItems: "center",
+    elevation: 8,
+  },
 
 
 });
