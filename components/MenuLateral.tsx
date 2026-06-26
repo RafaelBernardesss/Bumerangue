@@ -29,7 +29,7 @@ export default function MenuLateral() {
             style={styles.item}
             onPress={() => irPara("/perfil")}
           >
-            <Ionicons name="person-outline" size={20} color="#00AFFF" />
+            <Ionicons name="person-outline" size={24} color="#00AFFF" />
             <Text style={styles.itemTexto}>Perfil</Text>
           </TouchableOpacity>
 
@@ -37,7 +37,7 @@ export default function MenuLateral() {
             style={styles.item}
             onPress={() => irPara("/menu")}
           >
-            <Ionicons name="home-outline" size={20} color="#00AFFF" />
+            <Ionicons name="home-outline" size={24} color="#00AFFF" />
             <Text style={styles.itemTexto}>Menu</Text>
           </TouchableOpacity>
 
@@ -45,7 +45,7 @@ export default function MenuLateral() {
             style={styles.item}
             onPress={() => irPara("/ajuda")}
           >
-            <Ionicons name="help-circle-outline" size={20} color="#00AFFF" />
+            <Ionicons name="help-circle-outline" size={24} color="#00AFFF" />
             <Text style={styles.itemTexto}>Ajuda</Text>
           </TouchableOpacity>
 
@@ -53,7 +53,7 @@ export default function MenuLateral() {
             style={styles.item}
             onPress={() => setAberto(false)}
           >
-            <Ionicons name="close-outline" size={20} color="#00AFFF" />
+            <Ionicons name="close-outline" size={24} color="#00AFFF" />
             <Text style={styles.itemTexto}>Fechar</Text>
           </TouchableOpacity>
         </View>
@@ -68,13 +68,14 @@ const styles = StyleSheet.create({
   },
   painel: {
     position: "absolute",
-    top: 50,
-    left: 0,
-    width: 220,
+    top: 60,
+    left: "50%",
+    width: 280,
+    marginLeft: -140, // metade da largura (280 / 2), pra centralizar de verdade
     backgroundColor: "#0D1324",
-    paddingVertical: 16,
-    paddingHorizontal: 12,
-    borderRadius: 14,
+    paddingVertical: 20,
+    paddingHorizontal: 16,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: "#1E2433",
     elevation: 12,
@@ -83,14 +84,14 @@ const styles = StyleSheet.create({
   item: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 12,
-    paddingHorizontal: 10,
-    borderRadius: 10,
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    borderRadius: 12,
   },
   itemTexto: {
     color: "#E5E7EB",
-    fontSize: 16,
-    marginLeft: 10,
+    fontSize: 18,
+    marginLeft: 12,
     fontWeight: "500",
   },
 });

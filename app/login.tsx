@@ -12,9 +12,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-//components
-import Header from "../components/Hearder";
-
 export default function Cadastro() {
   const router = useRouter();
 
@@ -23,6 +20,16 @@ export default function Cadastro() {
   const [cpf, setCpf] = useState("");
 
   const [senha, setSenha] = useState("");
+
+  const verificarLogin = async () => {
+    const usuario = await AsyncStorage.getItem("usuarioLogado");
+
+    if (usuario) {
+      router.push("/oferecerServicos");
+    } else {
+      router.push("/login");
+    }
+  };
 
   //formatação de cpf
   function formatarCPF(texto = "") {
@@ -56,12 +63,14 @@ export default function Cadastro() {
       const data = await response.json();
 
       if (response.ok) {
+        await AsyncStorage.setItem(
+          "usuarioLogado",
+          JSON.stringify(data.usuario)
+        );
+
         Alert.alert("Sucesso", "Login realizado!");
 
-        router.push({
-          pathname: "/anuncios",
-          params: { name: data.usuario.nome },
-        });
+        router.replace("/anuncios");
       } else {
         Alert.alert("Erro", data.erro);
       }

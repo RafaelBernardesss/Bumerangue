@@ -9,7 +9,9 @@ import {
 
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
-import MenuLateral from "@/components/MenuLateral";
+
+//components
+import Header from "../components/HeaderEscolha";
 
 export default function Escolha() {
     const router = useRouter();
@@ -18,8 +20,8 @@ export default function Escolha() {
     return (
         <SafeAreaView style={styles.container}>
 
-            <View style={styles.header}>
-                <MenuLateral></MenuLateral>
+            <View style={styles.hearder}>
+               <Header></Header>
             </View>
             
 
@@ -58,7 +60,8 @@ const styles = StyleSheet.create({
     },
 
     hearder:{
-        
+        paddingHorizontal: 20,
+        paddingVertical: 10,
     },
 
     // CENTRALIZAÇÃO
@@ -99,48 +102,6 @@ const styles = StyleSheet.create({
     botaoSecundarioTexto: {
         color: "#3EC8FF",
         fontSize: 14,
-        fontWeight: "500",
-    },
-
-    // MENU HAMBURGUER
-    menuBtn: {
-        position: "absolute",
-        top: 50,
-        left: 20,
-        zIndex: 100,
-        padding: 10,
-        borderRadius: 50,
-        backgroundColor: "rgba(62,200,255,0.1)",
-    },
-
-    // MENU LATERAL
-    menuLateral: {
-        position: "absolute",
-        top: 100,
-        left: 15,
-        width: 220,
-        backgroundColor: "#111111",
-        paddingVertical: 16,
-        paddingHorizontal: 12,
-        borderRadius: 14,
-        borderWidth: 1,
-        borderColor: "#1E1E1E",
-        elevation: 10,
-        zIndex: 99,
-    },
-
-    itemMenu: {
-        flexDirection: "row",
-        alignItems: "center",
-        paddingVertical: 12,
-        paddingHorizontal: 10,
-        borderRadius: 10,
-    },
-
-    itemMenuText: {
-        color: "#E5E7EB",
-        fontSize: 16,
-        marginLeft: 10,
         fontWeight: "500",
     },
 
