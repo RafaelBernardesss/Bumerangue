@@ -86,7 +86,7 @@ export default function Cadastro() {
   return (
     <SafeAreaView style={styles.container}>
      
-     <View style={styles.header}>
+     <View style={{ zIndex: 1000 }}>
     <MenuLateral />
   </View>
 
@@ -180,6 +180,7 @@ const styles = StyleSheet.create({
     borderRadius: 50,
     backgroundColor: "rgba(62,200,255,0.1)",
   },
+
   title: {
     color: "#FFFFFF",
     fontSize: 28,
