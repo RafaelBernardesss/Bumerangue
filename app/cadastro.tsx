@@ -11,6 +11,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import ValidarCpf from "../services/ValidarCpf";
+import MenuLateral from "../components/MenuLateral"
 
 export default function Cadastro() {
   const router = useRouter();
@@ -106,89 +107,10 @@ export default function Cadastro() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* MENU HAMBURGUER */}
-      <TouchableOpacity
-        style={styles.menuBtn}
-        onPress={() => setMenuAberto(!menuAberto)}
-      >
-        <Ionicons
-          name="menu"
-          size={28}
-          color="#3EC8FF"
-        />
-      </TouchableOpacity>
 
-      {/* MENU LATERAL */}
-      {menuAberto && (
-        <View style={styles.menuLateral}>
-          <TouchableOpacity
-            style={styles.itemMenu}
-            onPress={() => {
-              setMenuAberto(false);
-              router.push("/perfil");
-            }}
-          >
-            <Ionicons
-              name="person-outline"
-              size={20}
-              color="#3EC8FF"
-            />
-            <Text style={styles.itemMenuText}>
-              Perfil
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.itemMenu}
-            onPress={() => {
-              setMenuAberto(false);
-              router.push("/menu");
-            }}
-          >
-            <Ionicons
-              name="home-outline"
-              size={20}
-              color="#3EC8FF"
-            />
-            <Text style={styles.itemMenuText}>
-              Menu
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.itemMenu}
-            onPress={() => {
-              setMenuAberto(false);
-              router.push("/ajuda");
-            }}
-          >
-            <Ionicons
-              name="help-circle-outline"
-              size={20}
-              color="#3EC8FF"
-            />
-            <Text style={styles.itemMenuText}>
-              Ajuda
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.itemMenu}
-            onPress={() =>
-              setMenuAberto(false)
-            }
-          >
-            <Ionicons
-              name="close-outline"
-              size={20}
-              color="#3EC8FF"
-            />
-            <Text style={styles.itemMenuText}>
-              Fechar
-            </Text>
-          </TouchableOpacity>
-        </View>
-      )}
+      <View style={styles.header}>
+        <MenuLateral/>
+      </View>
 
       {/* CONTEÚDO */}
       <View style={styles.formContainer}>
@@ -301,6 +223,12 @@ const styles = StyleSheet.create({
     backgroundColor: "#0B0B0B",
   },
 
+   header:{
+  paddingHorizontal: 20,
+  paddingTop: 10,
+  zIndex: 1000,
+  },
+
   formContainer: {
     flex: 1,
     alignItems: "center",
@@ -321,47 +249,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     elevation: 10,
-  },
-
-  menuBtn: {
-    position: "absolute",
-    top: 50,
-    left: 20,
-    zIndex: 100,
-    padding: 10,
-    borderRadius: 50,
-    backgroundColor:
-      "rgba(62,200,255,0.1)",
-  },
-
-  menuLateral: {
-    position: "absolute",
-    top: 100,
-    left: 15,
-    width: 220,
-    backgroundColor: "#111111",
-    paddingVertical: 16,
-    paddingHorizontal: 12,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: "#1E1E1E",
-    elevation: 10,
-    zIndex: 100,
-  },
-
-  itemMenu: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 12,
-    paddingHorizontal: 10,
-    borderRadius: 10,
-  },
-
-  itemMenuText: {
-    color: "#E5E7EB",
-    fontSize: 16,
-    marginLeft: 10,
-    fontWeight: "500",
   },
 
   title: {

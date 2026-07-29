@@ -40,7 +40,7 @@ export default function BumerangueLogo() {
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.item} onPress={() => irPara("/menu")}>
-            <Ionicons name="chatbubble-outline" size={20} color="#00AFFF" />
+            <Ionicons name="home-outline" size={20} color="#00AFFF" />
             <Text style={styles.itemTexto}>Menu</Text>
           </TouchableOpacity>
 

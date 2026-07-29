@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState,  } from "react";
 import { View, Text, Image, TouchableOpacity, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -6,6 +6,8 @@ import { useRouter } from "expo-router";
 export default function BumerangueLogo() {
   const router = useRouter();
   const [aberto, setAberto] = useState(false);
+
+  
 
   function irPara(rota: string) {
     setAberto(false);
@@ -34,7 +36,7 @@ export default function BumerangueLogo() {
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.item} onPress={() => irPara("/menu")}>
-            <Ionicons name="chatbubble-outline" size={20} color="#00AFFF" />
+            <Ionicons name="home-outline" size={20} color="#00AFFF" />
             <Text style={styles.itemTexto}>Menu</Text>
           </TouchableOpacity>
 
@@ -55,10 +57,12 @@ export default function BumerangueLogo() {
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+  position: "absolute",
+  top: 18,
+  left: 24,
+  zIndex: 999,
   },
+  
   menuHamburguer: {
     padding: 4,
   },
