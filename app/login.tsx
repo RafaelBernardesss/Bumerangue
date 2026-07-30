@@ -13,7 +13,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 //componenetes
-import MenuLateral from "../components/MenuLateral";
+import Flecha from "../components/HeaderFlecha"
 
 export default function Cadastro() {
   const router = useRouter();
@@ -87,7 +87,7 @@ export default function Cadastro() {
     <SafeAreaView style={styles.container}>
 
       <View style={styles.header}>
-        <MenuLateral/>
+        <Flecha/>
       </View>
      
      <View style={{ zIndex: 1000 }}>

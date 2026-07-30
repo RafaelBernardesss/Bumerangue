@@ -11,7 +11,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import ValidarCpf from "../services/ValidarCpf";
-import MenuLateral from "../components/MenuLateral"
+import Flecha from "../components/HeaderFlecha"
 
 export default function Cadastro() {
   const router = useRouter();
@@ -109,7 +109,7 @@ export default function Cadastro() {
     <SafeAreaView style={styles.container}>
 
       <View style={styles.header}>
-        <MenuLateral/>
+        <Flecha/>
       </View>
 
       {/* CONTEÚDO */}

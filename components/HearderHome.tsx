@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { View, Text, Image, TouchableOpacity, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import Flecha from "../components/HeaderFlecha"
 
 export default function BumerangueLogo() {
   const router = useRouter();
@@ -15,17 +14,12 @@ export default function BumerangueLogo() {
 
   return (
     <View style={styles.container}>
-      
-      <Flecha></Flecha>
 
       {/* LOGO + TEXTO */}
       <View style={styles.logoContainer}>
         <Image source={require("../assets/logo.png")} style={styles.logoImage} />
         <Text style={styles.logo}>Bumerangue</Text>
       </View>
-
-      {/* espaçador pra equilibrar visualmente o ícone da esquerda */}
-      <View style={{ width: 30 }} />
     </View>
   );
 }

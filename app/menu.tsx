@@ -11,7 +11,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 //importando componentes  
-import Header from "../components/Hearder";
+import HearderHome from "../components/HearderHome";
 
 
 
@@ -28,7 +28,7 @@ export default function Home() {
         {/* HEADER */}
         <View style={styles.header}>
 
-          <Header></Header>
+          <HearderHome></HearderHome>
 
         </View>
 
