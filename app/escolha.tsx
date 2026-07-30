@@ -76,7 +76,7 @@ const styles = StyleSheet.create({
     botaoPrimario: {
         width: 280,
         height: 50,
-        backgroundColor: "#3EC8FF",
+        backgroundColor: "#00AFFF",
         borderRadius: 12,
         justifyContent: "center",
         alignItems: "center",
@@ -100,7 +100,7 @@ const styles = StyleSheet.create({
     },
 
     botaoSecundarioTexto: {
-        color: "#3EC8FF",
+        color: "#00AFFF",
         fontSize: 14,
         fontWeight: "500",
     },
@@ -119,7 +119,7 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: "#3EC8FF",
+    backgroundColor: "#00AFFF",
     justifyContent: "center",
     alignItems: "center",
     elevation: 10,

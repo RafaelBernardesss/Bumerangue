@@ -58,7 +58,7 @@ export default function Cadastro() {
 
     try {
       const response = await fetch(
-        "http://172.30.1.25:3000/usuarios/cadastro",
+        "http://172.30.1.29:3000/usuarios/cadastro",
         {
           method: "POST",
           headers: {
@@ -245,7 +245,7 @@ const styles = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: "#3EC8FF",
+    backgroundColor: "#00AFFF",
     justifyContent: "center",
     alignItems: "center",
     elevation: 10,
@@ -290,7 +290,7 @@ const styles = StyleSheet.create({
   botaoPrimario: {
     width: "100%",
     height: 50,
-    backgroundColor: "#3EC8FF",
+    backgroundColor: "#00AFFF",
     borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",
@@ -315,7 +315,7 @@ const styles = StyleSheet.create({
   },
 
   botaoSecundarioTexto: {
-    color: "#3EC8FF",
+    color: "#00AFFF",
     fontSize: 14,
     fontWeight: "500",
   },

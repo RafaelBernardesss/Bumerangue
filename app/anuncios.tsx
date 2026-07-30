@@ -24,7 +24,6 @@ export default function Home() {
     {
       titulo: "Criação de Sites",
       categoria: "DESIGN",
-      preco: "R$ 150,00",
       nota: "5.0",
       cidade: "São Paulo - SP",
       imagem: "https://images.unsplash.com/photo-1498050108023-c5249f4df085",
@@ -32,7 +31,6 @@ export default function Home() {
     {
       titulo: "Desenvolvimento Web",
       categoria: "PROGRAMAÇÃO",
-      preco: "R$ 200,00",
       nota: "4.9",
       cidade: "Rio de Janeiro - RJ",
       imagem: "https://images.unsplash.com/photo-1515879218367-8466d910aaa4",
@@ -40,7 +38,6 @@ export default function Home() {
     {
       titulo: "Aulas de Matemática",
       categoria: "AULAS",
-      preco: "R$ 80,00",
       nota: "5.0",
       cidade: "São Paulo - SP",
       imagem: "https://images.unsplash.com/photo-1455390582262-044cdead277a",
@@ -268,7 +265,6 @@ export default function Home() {
                 <View style={styles.serviceInfo}>
                   <Text style={styles.serviceTitle}>{item.titulo}</Text>
                   <Text style={styles.rating}>⭐ {item.nota}</Text>
-                  <Text style={styles.price}>{item.preco}</Text>
                   <Text style={styles.location}>📍 {item.cidade}</Text>
                 </View>
               </View>
