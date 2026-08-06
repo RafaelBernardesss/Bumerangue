@@ -148,6 +148,7 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: "bold",
     marginTop: 15,
+    textAlign: 'center'
   },
 
   bannerText: {

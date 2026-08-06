@@ -20,7 +20,8 @@ const TODOS_SERVICOS = [
     preco: "R$ 150,00",
     nota: "5.0",
     cidade: "São Paulo - SP",
-    imagem: "https://images.unsplash.com/photo-1498050108023-c5249f4df085",
+    imagem:
+      "https://images.unsplash.com/photo-1498050108023-c5249f4df085",
   },
   {
     id: "2",
@@ -29,7 +30,8 @@ const TODOS_SERVICOS = [
     preco: "R$ 200,00",
     nota: "4.9",
     cidade: "Rio de Janeiro - RJ",
-    imagem: "https://images.unsplash.com/photo-1515879218367-8466d910aaa4",
+    imagem:
+      "https://images.unsplash.com/photo-1515879218367-8466d910aaa4",
   },
   {
     id: "3",
@@ -38,7 +40,8 @@ const TODOS_SERVICOS = [
     preco: "R$ 80,00",
     nota: "5.0",
     cidade: "São Paulo - SP",
-    imagem: "https://images.unsplash.com/photo-1455390582262-044cdead277a",
+    imagem:
+      "https://images.unsplash.com/photo-1455390582262-044cdead277a",
   },
   {
     id: "4",
@@ -47,7 +50,8 @@ const TODOS_SERVICOS = [
     preco: "R$ 120,00",
     nota: "4.8",
     cidade: "Curitiba - PR",
-    imagem: "https://images.unsplash.com/photo-1492619375914-88005aa9e8fb",
+    imagem:
+      "https://images.unsplash.com/photo-1492619375914-88005aa9e8fb",
   },
   {
     id: "5",
@@ -56,7 +60,8 @@ const TODOS_SERVICOS = [
     preco: "R$ 90,00",
     nota: "4.9",
     cidade: "Belo Horizonte - MG",
-    imagem: "https://images.unsplash.com/photo-1503676260728-1c00da094a0b",
+    imagem:
+      "https://images.unsplash.com/photo-1503676260728-1c00da094a0b",
   },
   {
     id: "6",
@@ -65,7 +70,8 @@ const TODOS_SERVICOS = [
     preco: "R$ 70,00",
     nota: "4.7",
     cidade: "São Paulo - SP",
-    imagem: "https://images.unsplash.com/photo-1518770660439-4636190af475",
+    imagem:
+      "https://images.unsplash.com/photo-1518770660439-4636190af475",
   },
 ];
 
@@ -73,27 +79,38 @@ const CATEGORIAS = ["Todos", "Design", "Programação", "Aulas"];
 
 export default function Servicos() {
   const router = useRouter();
+
   const [busca, setBusca] = useState("");
   const [categoria, setCategoria] = useState("Todos");
 
   const servicosFiltrados = TODOS_SERVICOS.filter((item) => {
-    const combinaCategoria = categoria === "Todos" || item.categoria === categoria;
-    const combinaBusca = item.titulo.toLowerCase().includes(busca.toLowerCase());
+    const combinaCategoria =
+      categoria === "Todos" || item.categoria === categoria;
+
+    const combinaBusca = item.titulo
+      .toLowerCase()
+      .includes(busca.toLowerCase());
+
     return combinaCategoria && combinaBusca;
   });
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={26} color="#00AFFF" />
         </TouchableOpacity>
-        <Text style={styles.titulo}>Explorar serviços</Text>
+
+        <Text style={styles.titulo}>Explorar Serviços</Text>
+
         <View style={{ width: 26 }} />
       </View>
 
+      {/* Busca */}
       <View style={styles.searchBox}>
         <Ionicons name="search" size={22} color="#999" />
+
         <TextInput
           placeholder="Buscar serviços..."
           placeholderTextColor="#999"
@@ -103,20 +120,32 @@ export default function Servicos() {
         />
       </View>
 
+      {/* Categorias */}
       <FlatList
         horizontal
-        showsHorizontalScrollIndicator={false}
         data={CATEGORIAS}
         keyExtractor={(item) => item}
-        contentContainerStyle={styles.categorias}
+        showsHorizontalScrollIndicator={false}
+        style={styles.categoriasContainer}
+        contentContainerStyle={styles.categoriasContent}
         renderItem={({ item }) => {
-          const ativo = item === categoria;
+          const ativo = categoria === item;
+
           return (
             <TouchableOpacity
-              style={[styles.chip, ativo && styles.chipAtivo]}
+              activeOpacity={0.8}
               onPress={() => setCategoria(item)}
+              style={[
+                styles.chip,
+                ativo && styles.chipAtivo,
+              ]}
             >
-              <Text style={[styles.chipText, ativo && styles.chipTextAtivo]}>
+              <Text
+                style={[
+                  styles.chipText,
+                  ativo && styles.chipTextAtivo,
+                ]}
+              >
                 {item}
               </Text>
             </TouchableOpacity>
@@ -124,26 +153,49 @@ export default function Servicos() {
         }}
       />
 
+      {/* Lista */}
       <FlatList
         data={servicosFiltrados}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.lista}
+        showsVerticalScrollIndicator={false}
         ListEmptyComponent={
-          <Text style={styles.vazio}>Nenhum serviço encontrado.</Text>
+          <Text style={styles.vazio}>
+            Nenhum serviço encontrado.
+          </Text>
         }
         renderItem={({ item }) => (
-          <TouchableOpacity style={styles.card} activeOpacity={0.85}>
-            <Image source={{ uri: item.imagem }} style={styles.imagem} />
+          <TouchableOpacity
+            activeOpacity={0.85}
+            style={styles.card}
+          >
+            <Image
+              source={{ uri: item.imagem }}
+              style={styles.imagem}
+            />
 
             <View style={styles.info}>
               <View style={styles.tag}>
-                <Text style={styles.tagText}>{item.categoria}</Text>
+                <Text style={styles.tagText}>
+                  {item.categoria}
+                </Text>
               </View>
 
-              <Text style={styles.cardTitulo}>{item.titulo}</Text>
-              <Text style={styles.rating}>⭐ {item.nota}</Text>
-              <Text style={styles.preco}>{item.preco}</Text>
-              <Text style={styles.local}>📍 {item.cidade}</Text>
+              <Text style={styles.cardTitulo}>
+                {item.titulo}
+              </Text>
+
+              <Text style={styles.rating}>
+                ⭐ {item.nota}
+              </Text>
+
+              <Text style={styles.preco}>
+                {item.preco}
+              </Text>
+
+              <Text style={styles.local}>
+                📍 {item.cidade}
+              </Text>
             </View>
           </TouchableOpacity>
         )}
@@ -157,117 +209,157 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#050B18",
   },
+
   header: {
     flexDirection: "row",
-    alignItems: "center",
     justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: 20,
     paddingTop: 10,
-    paddingBottom: 16,
+    paddingBottom: 18,
   },
+
   titulo: {
-    color: "#fff",
-    fontSize: 20,
+    color: "#FFFFFF",
+    fontSize: 22,
     fontWeight: "700",
   },
+
   searchBox: {
     flexDirection: "row",
     alignItems: "center",
+    backgroundColor: "#0D1324",
     marginHorizontal: 20,
     height: 54,
+    borderRadius: 15,
     borderWidth: 1,
-    borderColor: "#222",
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    backgroundColor: "#0D1324",
+    borderColor: "#1A2338",
+    paddingHorizontal: 15,
   },
+
   input: {
     flex: 1,
-    color: "#fff",
+    color: "#FFFFFF",
     marginLeft: 10,
+    fontSize: 15,
   },
-  categorias: {
+
+  /* ===== Categorias ===== */
+
+  categoriasContainer: {
+    marginTop: 18,
+    maxHeight: 75,
+  },
+
+  categoriasContent: {
+    flexGrow: 1,
+    justifyContent: "center",
+    alignItems: "center",
     paddingHorizontal: 20,
-    paddingVertical: 16,
   },
+
   chip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
+    minWidth: 105,
+    height: 42,
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: 22,
+    marginHorizontal: 6,
+    backgroundColor: "#0D1324",
     borderWidth: 1,
-    borderColor: "#222",
-    marginRight: 10,
+    borderColor: "#1E293B",
+    paddingHorizontal: 18,
   },
+
   chipAtivo: {
     backgroundColor: "#00AFFF",
     borderColor: "#00AFFF",
   },
+
   chipText: {
-    color: "#999",
+    color: "#B5B5B5",
+    fontSize: 14,
     fontWeight: "600",
   },
+
   chipTextAtivo: {
-    color: "#000",
+    color: "#FFFFFF",
+    fontWeight: "700",
   },
+
+  /* ===== Lista ===== */
+
   lista: {
     paddingHorizontal: 20,
+    paddingTop: 10,
     paddingBottom: 100,
   },
+
   vazio: {
-    color: "#666",
+    color: "#777",
     textAlign: "center",
     marginTop: 40,
+    fontSize: 15,
   },
+
   card: {
     flexDirection: "row",
     backgroundColor: "#0D1324",
-    borderRadius: 16,
-    marginBottom: 14,
+    borderRadius: 18,
     overflow: "hidden",
+    marginBottom: 16,
     borderWidth: 1,
-    borderColor: "#161D2E",
+    borderColor: "#18233A",
   },
+
   imagem: {
-    width: 110,
-    height: 110,
+    width: 115,
+    height: 115,
   },
+
   info: {
     flex: 1,
-    padding: 12,
+    padding: 14,
     justifyContent: "center",
   },
+
   tag: {
     alignSelf: "flex-start",
     backgroundColor: "#00AFFF",
     paddingHorizontal: 10,
-    paddingVertical: 3,
+    paddingVertical: 4,
     borderRadius: 8,
-    marginBottom: 6,
+    marginBottom: 8,
   },
+
   tagText: {
-    color: "#fff",
+    color: "#FFFFFF",
     fontSize: 11,
-    fontWeight: "bold",
+    fontWeight: "700",
   },
+
   cardTitulo: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "600",
+    color: "#FFFFFF",
+    fontSize: 17,
+    fontWeight: "700",
   },
+
   rating: {
-    color: "#ccc",
+    color: "#C8C8C8",
+    marginTop: 5,
     fontSize: 13,
-    marginTop: 4,
   },
+
   preco: {
     color: "#00AFFF",
-    fontSize: 16,
+    marginTop: 5,
+    fontSize: 17,
     fontWeight: "bold",
-    marginTop: 4,
   },
+
   local: {
-    color: "#888",
-    fontSize: 12,
-    marginTop: 4,
+    color: "#8D96A8",
+    marginTop: 5,
+    fontSize: 13,
   },
 });

@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import Header from "../components/Hearder"
 
 export default function Home() {
   const { name } = useLocalSearchParams();
@@ -75,83 +76,9 @@ export default function Home() {
 
   return (
     <View style={styles.container}>
-      {/* MENU LATERAL */}
-      {menuAberto && (
-        <View style={styles.menuLateral}>
-          <TouchableOpacity
-            style={styles.itemMenu}
-            onPress={() => {
-              setMenuAberto(false);
-              router.push("/perfil");
-            }}
-          >
-            <Ionicons name="person-outline" size={20} color="#00AFFF" />
-            <Text style={styles.itemMenuText}>Perfil</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.itemMenu}
-            onPress={() => {
-              setMenuAberto(false);
-              router.push("/historicoServico");
-            }}
-          >
-            <Ionicons name="time-outline" size={20} color="#00AFFF" />
-            <Text style={styles.itemMenuText}>Histórico</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.itemMenu}
-            onPress={() => {
-              setMenuAberto(false);
-              router.push("/Chat");
-            }}
-          >
-            <Ionicons name="chatbubble-outline" size={20} color="#00AFFF" />
-            <Text style={styles.itemMenuText}>Chat</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.itemMenu}
-            onPress={() => {
-              setMenuAberto(false);
-              router.push("/ajuda");
-            }}
-          >
-            <Ionicons name="help-circle-outline" size={20} color="#00AFFF" />
-            <Text style={styles.itemMenuText}>Ajuda</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.itemMenu}
-            onPress={() => setMenuAberto(false)}
-          >
-            <Ionicons name="close-outline" size={20} color="#00AFFF" />
-            <Text style={styles.itemMenuText}>Fechar</Text>
-          </TouchableOpacity>
-        </View>
-      )}
 
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* HEADER */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => setMenuAberto(!menuAberto)}>
-            <Ionicons name="menu" size={34} color="#fff" />
-          </TouchableOpacity>
-
-          <Text style={styles.logo}>Bumerangue</Text>
-
-          <TouchableOpacity
-            onPress={() =>
-              Alert.alert("Notificações", "Você não tem notificações novas.")
-            }
-          >
-            <Ionicons name="notifications-outline" size={30} color="#fff" />
-            <View style={styles.notificationBadge}>
-              <Text style={styles.badgeText}>3</Text>
-            </View>
-          </TouchableOpacity>
-        </View>
+        <Header></Header>
 
         {/* BOAS VINDAS */}
         <View style={styles.welcomeContainer}>
@@ -350,17 +277,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#0B0B0B",
     paddingTop: 50,
   },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 20,
-  },
-  logo: {
-    color: "#00AFFF",
-    fontSize: 34,
-    fontWeight: "bold",
-  },
   notificationBadge: {
     position: "absolute",
     right: -5,
@@ -376,33 +292,6 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 11,
     fontWeight: "bold",
-  },
-  menuLateral: {
-    position: "absolute",
-    top: 100,
-    left: 15,
-    width: 220,
-    backgroundColor: "#0D1324",
-    paddingVertical: 16,
-    paddingHorizontal: 12,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: "#1E2433",
-    elevation: 12,
-    zIndex: 100,
-  },
-  itemMenu: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 12,
-    paddingHorizontal: 10,
-    borderRadius: 10,
-  },
-  itemMenuText: {
-    color: "#E5E7EB",
-    fontSize: 16,
-    marginLeft: 10,
-    fontWeight: "500",
   },
   welcomeContainer: {
     flexDirection: "row",
