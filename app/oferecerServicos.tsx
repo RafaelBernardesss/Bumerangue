@@ -8,15 +8,13 @@ import {
   StyleSheet,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import Header from "../components/HeaderEscolha";
 
 export default function PublicarServico() {
   return (
     <ScrollView style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
-        <Ionicons name="menu" size={32} color="#fff" />
-        <Text style={styles.logo}>Bumerangue</Text>
-        <Ionicons name="notifications-outline" size={28} color="#fff" />
+        <Header></Header>
       </View>
 
       {/* Título */}
@@ -103,7 +101,7 @@ export default function PublicarServico() {
       <Text style={styles.label}>Imagem / Portfólio</Text>
 
       <TouchableOpacity style={styles.uploadBox}>
-        <Ionicons name="cloud-upload-outline" size={40} color="#27A7FF" />
+        <Ionicons name="cloud-upload-outline" size={40} color="#00AFFF" />
         <Text style={styles.uploadText}>
           Clique para enviar imagens
         </Text>
@@ -180,7 +178,7 @@ const styles = StyleSheet.create({
   },
 
   logo: {
-    color: "#27A7FF",
+    color: "#00AFFF",
     fontSize: 28,
     fontWeight: "bold",
   },
@@ -212,7 +210,7 @@ const styles = StyleSheet.create({
   input: {
     backgroundColor: "#0D1626",
     borderWidth: 1,
-    borderColor: "#1F3C5E",
+    borderColor: "#00AFFF",
     borderRadius: 12,
     padding: 15,
     color: "#fff",
@@ -240,19 +238,19 @@ const styles = StyleSheet.create({
 
   tag: {
     borderWidth: 1,
-    borderColor: "#27A7FF",
+    borderColor: "#00AFFF",
     borderRadius: 12,
     paddingVertical: 10,
     paddingHorizontal: 18,
   },
 
   tagText: {
-    color: "#27A7FF",
+    color: "#00AFFF",
   },
 
   uploadBox: {
     borderWidth: 1,
-    borderColor: "#27A7FF",
+    borderColor: "#00AFFF",
     borderStyle: "dashed",
     borderRadius: 12,
     padding: 30,
@@ -272,7 +270,7 @@ const styles = StyleSheet.create({
   },
 
   button: {
-    backgroundColor: "#27A7FF",
+    backgroundColor: "#00AFFF",
     borderRadius: 12,
     padding: 18,
     flexDirection: "row",
@@ -322,7 +320,7 @@ const styles = StyleSheet.create({
   },
 
   serviceTitle: {
-    color: "#27A7FF",
+    color: "#00AFFF",
     fontSize: 18,
     fontWeight: "bold",
     marginTop: 4,
@@ -339,7 +337,7 @@ const styles = StyleSheet.create({
   },
 
   priceBox: {
-    backgroundColor: "#27A7FF",
+    backgroundColor: "#00AFFF",
     paddingHorizontal: 15,
     paddingVertical: 10,
     borderRadius: 10,

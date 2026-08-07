@@ -93,7 +93,7 @@ export default function Admin() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={26} color="#3EC8FF" />
+          <Ionicons name="arrow-back" size={26} color="#00AFFF" />
         </TouchableOpacity>
 
         <Text style={styles.titulo}>Gerenciar Contas</Text>
@@ -102,7 +102,7 @@ export default function Admin() {
       {carregando ? (
         <ActivityIndicator
           size="large"
-          color="#3EC8FF"
+          color="#00AFFF"
           style={{ marginTop: 40 }}
         />
       ) : (
@@ -114,7 +114,7 @@ export default function Admin() {
             <RefreshControl
               refreshing={atualizando}
               onRefresh={onRefresh}
-              tintColor="#3EC8FF"
+              tintColor="#00AFFF"
             />
           }
           ListEmptyComponent={

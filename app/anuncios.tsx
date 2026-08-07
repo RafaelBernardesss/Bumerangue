@@ -78,7 +78,9 @@ export default function Home() {
     <View style={styles.container}>
 
       <ScrollView showsVerticalScrollIndicator={false}>
-        <Header></Header>
+        <View>
+            <Header></Header>
+        </View>
 
         {/* BOAS VINDAS */}
         <View style={styles.welcomeContainer}>
@@ -125,7 +127,7 @@ export default function Home() {
           <TouchableOpacity
             style={styles.actionCard}
             activeOpacity={0.7}
-            onPress={() => router.push("/servicos")}
+            onPress={() => router.push("/verAnuncio")}
           >
             <View style={[styles.circle, { backgroundColor: "#00AFFF" }]}>
               <Ionicons name="compass-outline" size={26} color="#000" />
@@ -162,7 +164,7 @@ export default function Home() {
         {/* SERVIÇOS */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Serviços em destaque</Text>
-          <TouchableOpacity onPress={() => router.push("/servicos")}>
+          <TouchableOpacity onPress={() => router.push("/verAnuncio")}>
             <Text style={styles.link}>Ver todos</Text>
           </TouchableOpacity>
         </View>
@@ -248,7 +250,7 @@ export default function Home() {
           <Ionicons name="home" size={30} color="#00AFFF" />
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => router.push("/servicos")}>
+        <TouchableOpacity onPress={() => router.push("/verAnuncio")}>
           <Ionicons name="search" size={30} color="#999" />
         </TouchableOpacity>
 
