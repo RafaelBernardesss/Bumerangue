@@ -154,9 +154,7 @@ export default function AnunciosDisponiveis() {
 
             </View>
 
-            <View style={styles.priceBox}>
-              <Text style={styles.price}>Ver</Text>
-            </View>
+            
           </TouchableOpacity>
         )}
         ListEmptyComponent={
@@ -298,12 +296,6 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
 
-  priceBox: {
-    backgroundColor: "#00AFFF",
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-    borderRadius: 10,
-  },
 
   price: {
     color: "#fff",

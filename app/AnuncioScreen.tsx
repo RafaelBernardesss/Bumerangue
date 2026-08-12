@@ -114,7 +114,11 @@ export default function DetalheAnuncio() {
         </View>
       </View>
     );
+
   }
+  
+  const anuncios = anuncio;
+
 
   function enviarProposta() {
     if (!servicoEscolhido) {
@@ -126,7 +130,7 @@ export default function DetalheAnuncio() {
 
     Alert.alert(
       "Proposta enviada",
-      `Você propôs trocar "${nomeServico}" pelo serviço "${anuncio.servico}" de ${anuncio.nome}.`,
+      `Você propôs trocar "${nomeServico}" pelo serviço "${anuncios.servico}" de ${anuncios.nome}.`,
       [{ text: "OK", onPress: () => router.back() }]
     );
   }
@@ -138,7 +142,7 @@ export default function DetalheAnuncio() {
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 60 }}>
-        
+
         {/* Card do anunciante */}
         <View style={styles.card}>
           <View style={styles.avatar} />

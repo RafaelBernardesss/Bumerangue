@@ -15,12 +15,9 @@ class LoginController {
       // remover pontos e traços do CPF
       const cpfLimpo = cpf.replace(/\D/g, "");
 
-      // Procurar usuário
+      // Procurar usuário pelo CPF e senha (texto puro, sem criptografia por enquanto)
       const usuario = await prisma.usuario.findFirst({
-        where: {
-          cpf: cpfLimpo,
-          senha,
-        },
+        where: { cpf: cpfLimpo, senha },
       });
 
       // Verificar se encontrou usuário
@@ -30,9 +27,12 @@ class LoginController {
         });
       }
 
+      // Remove a senha antes de devolver o usuário para o front-end
+      const { senha: _senha, ...usuarioSemSenha } = usuario;
+
       return res.status(200).json({
         mensagem: "Login realizado com sucesso",
-        usuario,
+        usuario: usuarioSemSenha,
       });
 
     } catch (error) {

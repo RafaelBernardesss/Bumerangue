@@ -25,9 +25,9 @@ export default function Cadastro() {
   const [senha, setSenha] = useState("");
 
   const verificarLogin = async () => {
-    const usuario = await AsyncStorage.getItem("usuarioLogado");
+    const idUsuario = await AsyncStorage.getItem("usuarioId");
 
-    if (usuario) {
+    if (idUsuario) {
       router.push("/oferecerServicos");
     } else {
       router.push("/login");
@@ -50,7 +50,7 @@ export default function Cadastro() {
   async function fazerLogin() {
     try {
       const response = await fetch(
-        "http://172.30.1.41:3000/usuarios/login",
+        "http://192.168.18.7:3000/usuarios/login",
         {
           method: "POST",
           headers: {
@@ -66,14 +66,17 @@ export default function Cadastro() {
       const data = await response.json();
 
       if (response.ok) {
-        await AsyncStorage.setItem(
-          "usuarioLogado",
-          JSON.stringify(data.usuario)
-        );
+        // Salva o id do usuário (usado pelo Perfil e outras telas) - chave correta: "usuarioId"
+        await AsyncStorage.setItem("usuarioId", String(data.usuario.id));
+        // Mantém o objeto completo também, caso precise em outras telas
+        await AsyncStorage.setItem("usuarioLogado", JSON.stringify(data.usuario));
 
         Alert.alert("Sucesso", "Login realizado!");
 
-        router.replace("/anuncios");
+        router.replace({
+          pathname: "/anuncios",
+          params: { name: data.usuario.nome },
+        });
       } else {
         Alert.alert("Erro", data.erro);
       }

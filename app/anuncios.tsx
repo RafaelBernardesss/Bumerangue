@@ -132,8 +132,8 @@ export default function Home() {
             <View style={[styles.circle, { backgroundColor: "#00AFFF" }]}>
               <Ionicons name="compass-outline" size={26} color="#000" />
             </View>
-            <Text style={styles.actionTitle}>Explorar serviços</Text>
-            <Text style={styles.actionSubtitle}>Ver todos disponíveis</Text>
+            <Text style={styles.actionTitle}>Serviços Ativos</Text>
+            <Text style={styles.actionSubtitle}>Ver todos seus serviços</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -144,8 +144,8 @@ export default function Home() {
             <View style={[styles.circle, { backgroundColor: "#9B4DFF" }]}>
               <Ionicons name="time-outline" size={26} color="#000" />
             </View>
-            <Text style={styles.actionTitle}>Histórico</Text>
-            <Text style={styles.actionSubtitle}>Serviços realizados</Text>
+            <Text style={styles.actionTitle}>Serviços Realizados</Text>
+            <Text style={styles.actionSubtitle}>Todos os serviços realizados</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -156,8 +156,8 @@ export default function Home() {
             <View style={[styles.circle, { backgroundColor: "#00FF44" }]}>
               <Ionicons name="add-circle-outline" size={26} color="#000" />
             </View>
-            <Text style={styles.actionTitle}>Oferecer serviço</Text>
-            <Text style={styles.actionSubtitle}>Publique um serviço</Text>
+            <Text style={styles.actionTitle}>Usuario Favorito</Text>
+            <Text style={styles.actionSubtitle}>Ver todos os Melhores Usuarios</Text>
           </TouchableOpacity>
         </View>
 

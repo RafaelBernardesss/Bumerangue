@@ -1,22 +1,78 @@
-// perfil.tsx
-// Modelo inicial. Substitua as funções de salvar/excluir pela sua API.
-
-import React, { useState } from "react";
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Image, Alert, ScrollView } from "react-native";
+import React, { useEffect, useState } from "react";
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Image, Alert, ScrollView, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as ImagePicker from "expo-image-picker";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useRouter } from "expo-router";
 
 //components
 import Header from "../components/HeaderEscolha";
 
+// Ajuste esse IP para o IP da sua máquina rodando o backend (o mesmo que aparece
+// no erro do Expo, ex: 192.168.18.7). Não use "localhost" pois no celular físico
+// ou emulador isso não aponta para o seu PC.
+const API_URL = "http://192.168.18.7:3000";
+
 export default function Perfil() {
+  const router = useRouter();
+
+  const [carregando, setCarregando] = useState(true);
+  const [salvando, setSalvando] = useState(false);
+
+  const [idUsuario, setIdUsuario] = useState<string | null>(null);
   const [foto, setFoto] = useState<string | null>(null);
-  const [nome, setNome] = useState("João da Silva");
-  const [email, setEmail] = useState("joao@email.com");
-  const [telefone, setTelefone] = useState("(11) 99999-9999");
-  const [cidade, setCidade] = useState("São Paulo");
-  const [descricao, setDescricao] = useState("");
-  const [senha, setSenha] = useState("");
+
+  const [nome, setNome] = useState("");
+  const [nomeOriginal, setNomeOriginal] = useState("");
+
+  const [email, setEmail] = useState("");
+
+  const [telefone, setTelefone] = useState("");
+  const [telefoneOriginal, setTelefoneOriginal] = useState("");
+
+  const [senhaAtual, setSenhaAtual] = useState("");
+  const [novaSenha, setNovaSenha] = useState("");
+  const [confirmarNovaSenha, setConfirmarNovaSenha] = useState("");
+
+  // Carrega os dados do usuário logado assim que a tela abre
+  useEffect(() => {
+    carregarUsuario();
+  }, []);
+
+  async function carregarUsuario() {
+    try {
+      const id = await AsyncStorage.getItem("usuarioId");
+
+      if (!id) {
+        Alert.alert("Sessão expirada", "Faça login novamente.");
+        router.replace("/login");
+        return;
+      }
+
+      setIdUsuario(id);
+
+      const resposta = await fetch(`${API_URL}/usuarios/${id}`);
+      const dados = await resposta.json();
+
+      if (!resposta.ok) {
+        throw new Error(dados.erro || "Erro ao carregar os dados do usuário.");
+      }
+
+      setNome(dados.usuario.nome);
+      setNomeOriginal(dados.usuario.nome);
+      setEmail(dados.usuario.email);
+      setTelefone(dados.usuario.telefone || "");
+      setTelefoneOriginal(dados.usuario.telefone || "");
+
+      if (dados.usuario.foto) {
+        setFoto(`${API_URL}/${dados.usuario.foto.replace(/\\/g, "/")}`);
+      }
+    } catch (erro: any) {
+      Alert.alert("Erro", erro.message || "Não foi possível carregar seu perfil.");
+    } finally {
+      setCarregando(false);
+    }
+  }
 
   async function escolherFoto() {
     const p = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -25,32 +81,161 @@ export default function Perfil() {
       mediaTypes: ["images"],
       quality: 1,
     });
-    if (!r.canceled) setFoto(r.assets[0].uri);
+    if (!r.canceled) {
+      setFoto(r.assets[0].uri);
+      await enviarFoto(r.assets[0].uri);
+    }
   }
 
   function removerFoto() {
     setFoto(null);
+    // Remoção no backend fica para uma próxima etapa (rota DELETE /usuarios/:id/foto)
   }
 
-  function salvar() {
-    Alert.alert("Sucesso", "Alterações salvas.");
+  // Envia a foto para o backend assim que o usuário escolhe uma nova imagem
+  async function enviarFoto(uri: string) {
+    if (!idUsuario) return;
+
+    const formData = new FormData();
+    const nomeArquivo = uri.split("/").pop() || "foto.jpg";
+    const extensao = nomeArquivo.split(".").pop();
+
+    formData.append("foto", {
+      uri,
+      name: nomeArquivo,
+      type: `image/${extensao === "jpg" ? "jpeg" : extensao}`,
+    } as any);
+
+    try {
+      const resposta = await fetch(`${API_URL}/usuarios/${idUsuario}/foto`, {
+        method: "PUT",
+        body: formData,
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      const dados = await resposta.json();
+
+      if (!resposta.ok) {
+        throw new Error(dados.erro || "Erro ao enviar a foto.");
+      }
+    } catch (erro: any) {
+      Alert.alert("Erro", erro.message || "Não foi possível enviar a foto.");
+    }
+  }
+
+  // Atualiza o nome de usuário no backend (só chama se o nome mudou)
+  async function salvarNome() {
+    if (nome === nomeOriginal) return;
+    if (!idUsuario) return;
+
+    const resposta = await fetch(`${API_URL}/usuarios/${idUsuario}/nome`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nome }),
+    });
+
+    const dados = await resposta.json();
+
+    if (!resposta.ok) {
+      throw new Error(dados.erro || "Erro ao atualizar o nome.");
+    }
+
+    setNomeOriginal(nome);
+  }
+
+  // Atualiza o telefone no backend (só chama se mudou)
+  async function salvarTelefone() {
+    if (telefone === telefoneOriginal) return;
+    if (!idUsuario) return;
+
+    const resposta = await fetch(`${API_URL}/usuarios/${idUsuario}/telefone`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ telefone }),
+    });
+
+    const dados = await resposta.json();
+
+    if (!resposta.ok) {
+      throw new Error(dados.erro || "Erro ao atualizar o telefone.");
+    }
+
+    setTelefoneOriginal(telefone);
+  }
+
+  // Redefine a senha no backend (só chama se os campos de senha foram preenchidos)
+  async function salvarSenha() {
+    if (!senhaAtual && !novaSenha && !confirmarNovaSenha) return;
+    if (!idUsuario) return;
+
+    if (!senhaAtual || !novaSenha || !confirmarNovaSenha) {
+      throw new Error("Preencha a senha atual, a nova senha e a confirmação para trocar a senha.");
+    }
+
+    const resposta = await fetch(`${API_URL}/usuarios/${idUsuario}/senha`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ senhaAtual, novaSenha, confirmarNovaSenha }),
+    });
+
+    const dados = await resposta.json();
+
+    if (!resposta.ok) {
+      throw new Error(dados.erro || "Erro ao redefinir a senha.");
+    }
+
+    setSenhaAtual("");
+    setNovaSenha("");
+    setConfirmarNovaSenha("");
+  }
+
+  async function salvar() {
+    setSalvando(true);
+    try {
+      await salvarNome();
+      await salvarTelefone();
+      await salvarSenha();
+      Alert.alert("Sucesso", "Alterações salvas.");
+    } catch (erro: any) {
+      Alert.alert("Erro", erro.message || "Não foi possível salvar as alterações.");
+    } finally {
+      setSalvando(false);
+    }
   }
 
   function excluir() {
-    Alert.alert("Excluir conta", "Deseja excluir sua conta?", [
+    Alert.alert("Excluir conta", "Deseja excluir sua conta? Essa ação não pode ser desfeita.", [
       { text: "Cancelar", style: "cancel" },
-      { text: "Excluir", style: "destructive", onPress: () => Alert.alert("Conta excluída") },
+      { text: "Excluir", style: "destructive", onPress: confirmarExclusao },
     ]);
   }
 
-  const campos: [string, string, (v: string) => void][] = [
-    ["Nome", nome, setNome],
-    ["E-mail", email, setEmail],
-    ["Telefone", telefone, setTelefone],
-    ["Cidade", cidade, setCidade],
-    ["Descrição", descricao, setDescricao],
-    ["Nova senha", senha, setSenha],
-  ];
+  async function confirmarExclusao() {
+    if (!idUsuario) return;
+
+    try {
+      setSalvando(true);
+      const resposta = await fetch(`${API_URL}/usuarios/${idUsuario}`, {
+        method: "DELETE",
+      });
+
+      const dados = await resposta.json();
+
+      if (!resposta.ok) {
+        throw new Error(dados.erro || "Erro ao excluir a conta.");
+      }
+
+      await AsyncStorage.removeItem("usuarioId");
+      Alert.alert("Conta excluída", "Sua conta foi excluída com sucesso.");
+      router.replace("/login");
+    } catch (erro: any) {
+      Alert.alert("Erro", erro.message || "Não foi possível excluir a conta.");
+    } finally {
+      setSalvando(false);
+    }
+  }
 
   const iniciais = nome
     .split(" ")
@@ -58,6 +243,14 @@ export default function Perfil() {
     .slice(0, 2)
     .map((n) => n[0]?.toUpperCase())
     .join("");
+
+  if (carregando) {
+    return (
+      <SafeAreaView style={[s.container, { justifyContent: "center", alignItems: "center" }]}>
+        <ActivityIndicator color="#00AFFF" size="large" />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={s.container}>
@@ -67,6 +260,7 @@ export default function Perfil() {
 
       <ScrollView style={s.c} contentContainerStyle={{ padding: 20 }}>
         <Text style={s.t}>Meu Perfil</Text>
+
         <TouchableOpacity onPress={escolherFoto} style={s.center}>
           {foto ? (
             <Image source={{ uri: foto }} style={s.img} />
@@ -81,23 +275,55 @@ export default function Perfil() {
           <Text style={s.rem}>Remover foto</Text>
         </TouchableOpacity>
 
-        {campos.map(([l, v, set]) => (
-          <View key={l} style={{ marginTop: 16 }}>
-            <Text style={s.lbl}>{l}</Text>
-            <TextInput
-              value={v}
-              onChangeText={set}
-              style={s.i}
-              secureTextEntry={l === "Nova senha"}
-              multiline={l === "Descrição"}
-            />
-          </View>
-        ))}
+        {/* Nome: editável */}
+        <View style={{ marginTop: 16 }}>
+          <Text style={s.lbl}>Nome</Text>
+          <TextInput value={nome} onChangeText={setNome} style={s.i} />
+        </View>
 
-        <TouchableOpacity style={s.btn} onPress={salvar}>
-          <Text style={s.btnt}>Salvar Alterações</Text>
+        {/* E-mail: somente leitura, veio do cadastro */}
+        <View style={{ marginTop: 16 }}>
+          <Text style={s.lbl}>E-mail</Text>
+          <TextInput value={email} editable={false} style={[s.i, s.iDesabilitado]} />
+        </View>
+
+        {/* Telefone: só é preenchido aqui, depois do login */}
+        <View style={{ marginTop: 16 }}>
+          <Text style={s.lbl}>Telefone</Text>
+          <TextInput
+            value={telefone}
+            onChangeText={setTelefone}
+            style={s.i}
+            placeholder="(11) 99999-9999"
+            placeholderTextColor="#666"
+            keyboardType="phone-pad"
+          />
+        </View>
+
+        <View style={{ marginTop: 24 }}>
+          <Text style={s.secaoTitulo}>Trocar senha</Text>
+          <Text style={s.secaoSubtitulo}>Preencha os três campos abaixo apenas se quiser trocar sua senha.</Text>
+
+          <View style={{ marginTop: 12 }}>
+            <Text style={s.lbl}>Senha atual</Text>
+            <TextInput value={senhaAtual} onChangeText={setSenhaAtual} style={s.i} secureTextEntry />
+          </View>
+
+          <View style={{ marginTop: 12 }}>
+            <Text style={s.lbl}>Nova senha</Text>
+            <TextInput value={novaSenha} onChangeText={setNovaSenha} style={s.i} secureTextEntry />
+          </View>
+
+          <View style={{ marginTop: 12 }}>
+            <Text style={s.lbl}>Confirmar nova senha</Text>
+            <TextInput value={confirmarNovaSenha} onChangeText={setConfirmarNovaSenha} style={s.i} secureTextEntry />
+          </View>
+        </View>
+
+        <TouchableOpacity style={s.btn} onPress={salvar} disabled={salvando}>
+          {salvando ? <ActivityIndicator color="#fff" /> : <Text style={s.btnt}>Salvar Alterações</Text>}
         </TouchableOpacity>
-        <TouchableOpacity style={s.del} onPress={excluir}>
+        <TouchableOpacity style={s.del} onPress={excluir} disabled={salvando}>
           <Text style={s.btnt}>Excluir Conta</Text>
         </TouchableOpacity>
       </ScrollView>
@@ -147,7 +373,7 @@ const s = StyleSheet.create({
     fontWeight: "700"
   },
   link: {
-    color: "#0AFFF",
+    color: "#00AFFF",
     marginTop: 10
   },
   rem: {
@@ -166,6 +392,19 @@ const s = StyleSheet.create({
     borderRadius: 12,
     color: "#fff",
     padding: 12
+  },
+  iDesabilitado: {
+    opacity: 0.5,
+  },
+  secaoTitulo: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "700",
+  },
+  secaoSubtitulo: {
+    color: "#9CA3AF",
+    fontSize: 13,
+    marginTop: 4,
   },
   btn: {
     backgroundColor: "#00AFFF",

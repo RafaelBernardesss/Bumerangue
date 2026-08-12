@@ -29,7 +29,7 @@ export default function Admin() {
   async function buscarUsuarios() {
     try {
       const response = await fetch(
-        "http://172.30.1.41:3000/usuarios/listar"
+        "http://192.168.18.7:3000/usuarios/listar"
       );
       const data = await response.json();
 
