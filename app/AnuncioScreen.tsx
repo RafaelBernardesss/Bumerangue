@@ -138,11 +138,7 @@ export default function DetalheAnuncio() {
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 60 }}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={22} color="#fff" />
-          <Text style={styles.backButtonText}>Voltar</Text>
-        </TouchableOpacity>
-
+        
         {/* Card do anunciante */}
         <View style={styles.card}>
           <View style={styles.avatar} />

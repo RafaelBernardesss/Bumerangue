@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Header from "../components/HeaderEscolha";
-import { router } from "@/.expo/types/router";
+import { router } from "expo-router";
 
 type Anuncio = {
   id: string;
@@ -136,7 +136,7 @@ export default function AnunciosDisponiveis() {
           </>
         }
         renderItem={({ item }) => (
-          <TouchableOpacity style={styles.card} onPress={() => router.push("/AnuncioScreen")}>
+          <TouchableOpacity style={styles.card}  onPress={() => router.push({ pathname: "/AnuncioScreen", params: { id: item.id } })}>
             <View style={styles.avatar} />
 
             <View style={{ flex: 1 }}>
