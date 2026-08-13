@@ -95,6 +95,57 @@ export async function atualizarFotoPerfil(req, res) {
 }
 
 /**
+ * Remove a foto de perfil do usuário (apaga o arquivo do disco e limpa o campo no banco).
+ * Rota sugerida: DELETE /usuario/:id/foto
+ */
+export async function removerFotoPerfil(req, res) {
+  try {
+    const idUsuario = Number(req.params.id || req.user?.id);
+
+    if (!idUsuario) {
+      return res.status(400).json({ erro: "ID do usuário não informado." });
+    }
+
+    const usuarioExistente = await prisma.usuario.findUnique({
+      where: { id: idUsuario },
+    });
+
+    if (!usuarioExistente) {
+      return res.status(404).json({ erro: "Usuário não encontrado." });
+    }
+
+    if (usuarioExistente.foto) {
+      const caminhoFoto = path.resolve(usuarioExistente.foto);
+      fs.unlink(caminhoFoto, (err) => {
+        if (err && err.code !== "ENOENT") {
+          console.error("Erro ao remover arquivo da foto:", err);
+        }
+      });
+    }
+
+    const usuarioAtualizado = await prisma.usuario.update({
+      where: { id: idUsuario },
+      data: { foto: null },
+      select: {
+        id: true,
+        nome: true,
+        email: true,
+        foto: true,
+        telefone: true,
+      },
+    });
+
+    return res.status(200).json({
+      mensagem: "Foto de perfil removida com sucesso.",
+      usuario: usuarioAtualizado,
+    });
+  } catch (erro) {
+    console.error("Erro ao remover foto de perfil:", erro);
+    return res.status(500).json({ erro: "Erro interno ao remover a foto de perfil." });
+  }
+}
+
+/**
  * Atualiza o nome de usuário.
  * Rota sugerida: PUT /usuario/:id/nome  (ou /usuario/nome se usar auth por token)
  * Body esperado: { "nome": "Novo Nome" }

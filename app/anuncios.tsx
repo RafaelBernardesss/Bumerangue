@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState,  useCallback  } from "react";
 import {
   View,
   Text,
@@ -10,11 +10,27 @@ import {
   Alert,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { useFocusEffect } from "@react-navigation/native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
-import Header from "../components/Hearder"
+import Header from "../components/Hearder";
 
 export default function Home() {
-  const { name } = useLocalSearchParams();
+const { name: nomeInicial } = useLocalSearchParams();
+const [name, setName] = useState(nomeInicial);
+
+useFocusEffect(
+  useCallback(() => {
+    async function atualizarNome() {
+      const usuarioSalvo = await AsyncStorage.getItem("usuarioLogado");
+      if (usuarioSalvo) {
+        const usuario = JSON.parse(usuarioSalvo);
+        setName(usuario.nome);
+      }
+    }
+    atualizarNome();
+  }, [])
+);
   const router = useRouter();
 
   const [menuAberto, setMenuAberto] = useState(false);

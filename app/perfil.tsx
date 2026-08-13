@@ -4,6 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import * as ImagePicker from "expo-image-picker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
+import { useNavigation } from "@react-navigation/native";
 
 //components
 import Header from "../components/HeaderEscolha";
@@ -15,12 +16,15 @@ const API_URL = "http://192.168.18.7:3000";
 
 export default function Perfil() {
   const router = useRouter();
+  const navigation = useNavigation();
 
   const [carregando, setCarregando] = useState(true);
   const [salvando, setSalvando] = useState(false);
 
   const [idUsuario, setIdUsuario] = useState<string | null>(null);
-  const [foto, setFoto] = useState<string | null>(null);
+  const [foto, setFoto] = useState<string | null>(null); // o que é exibido na tela
+  const [novaFotoUri, setNovaFotoUri] = useState<string | null>(null); // foto local escolhida, ainda não enviada
+  const [fotoRemovidaPendente, setFotoRemovidaPendente] = useState(false); // usuário pediu pra remover, ainda não confirmado
 
   const [nome, setNome] = useState("");
   const [nomeOriginal, setNomeOriginal] = useState("");
@@ -41,6 +45,8 @@ export default function Perfil() {
 
   async function carregarUsuario() {
     try {
+      // Chave correta: "usuarioId" guarda só o id (string).
+      // "usuarioLogado" guarda o objeto inteiro, não use aqui.
       const id = await AsyncStorage.getItem("usuarioId");
 
       if (!id) {
@@ -82,37 +88,38 @@ export default function Perfil() {
       quality: 1,
     });
     if (!r.canceled) {
+      // Só guarda localmente por enquanto; o envio de verdade acontece ao clicar em Salvar
       setFoto(r.assets[0].uri);
-      await enviarFoto(r.assets[0].uri);
+      setNovaFotoUri(r.assets[0].uri);
+      setFotoRemovidaPendente(false);
     }
   }
 
   function removerFoto() {
+    // Só marca como pendente; a remoção de verdade no backend acontece ao clicar em Salvar
     setFoto(null);
-    // Remoção no backend fica para uma próxima etapa (rota DELETE /usuarios/:id/foto)
+    setNovaFotoUri(null);
+    setFotoRemovidaPendente(true);
   }
 
-  // Envia a foto para o backend assim que o usuário escolhe uma nova imagem
-  async function enviarFoto(uri: string) {
+  // Envia a foto nova escolhida para o backend (chamado só dentro de salvar())
+  async function salvarFoto() {
     if (!idUsuario) return;
 
-    const formData = new FormData();
-    const nomeArquivo = uri.split("/").pop() || "foto.jpg";
-    const extensao = nomeArquivo.split(".").pop();
+    if (novaFotoUri) {
+      const formData = new FormData();
+      const nomeArquivo = novaFotoUri.split("/").pop() || "foto.jpg";
+      const extensao = nomeArquivo.split(".").pop();
 
-    formData.append("foto", {
-      uri,
-      name: nomeArquivo,
-      type: `image/${extensao === "jpg" ? "jpeg" : extensao}`,
-    } as any);
+      formData.append("foto", {
+        uri: novaFotoUri,
+        name: nomeArquivo,
+        type: `image/${extensao === "jpg" ? "jpeg" : extensao}`,
+      } as any);
 
-    try {
       const resposta = await fetch(`${API_URL}/usuarios/${idUsuario}/foto`, {
         method: "PUT",
         body: formData,
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
       });
 
       const dados = await resposta.json();
@@ -120,8 +127,23 @@ export default function Perfil() {
       if (!resposta.ok) {
         throw new Error(dados.erro || "Erro ao enviar a foto.");
       }
-    } catch (erro: any) {
-      Alert.alert("Erro", erro.message || "Não foi possível enviar a foto.");
+
+      setNovaFotoUri(null);
+      return;
+    }
+
+    if (fotoRemovidaPendente) {
+      const resposta = await fetch(`${API_URL}/usuarios/${idUsuario}/foto`, {
+        method: "DELETE",
+      });
+
+      const dados = await resposta.json();
+
+      if (!resposta.ok) {
+        throw new Error(dados.erro || "Erro ao remover a foto.");
+      }
+
+      setFotoRemovidaPendente(false);
     }
   }
 
@@ -194,6 +216,7 @@ export default function Perfil() {
   async function salvar() {
     setSalvando(true);
     try {
+      await salvarFoto();
       await salvarNome();
       await salvarTelefone();
       await salvarSenha();
@@ -228,6 +251,7 @@ export default function Perfil() {
       }
 
       await AsyncStorage.removeItem("usuarioId");
+      await AsyncStorage.removeItem("usuarioLogado");
       Alert.alert("Conta excluída", "Sua conta foi excluída com sucesso.");
       router.replace("/login");
     } catch (erro: any) {
@@ -237,12 +261,74 @@ export default function Perfil() {
     }
   }
 
+  // Considera que há alteração pendente se nome, telefone, senha ou a foto mudaram
+  const temAlteracaoPendente =
+    nome !== nomeOriginal ||
+    telefone !== telefoneOriginal ||
+    senhaAtual !== "" ||
+    novaSenha !== "" ||
+    confirmarNovaSenha !== "" ||
+    novaFotoUri !== null ||
+    fotoRemovidaPendente;
+
+  // Intercepta a tentativa de sair da tela (voltar, trocar de aba, etc.)
+  useEffect(() => {
+    const unsubscribe = navigation.addListener("beforeRemove", (e: any) => {
+      if (!temAlteracaoPendente || salvando) {
+        // Sem alteração pendente, deixa sair normalmente
+        return;
+      }
+
+      // Bloqueia a saída por enquanto
+      e.preventDefault();
+
+      Alert.alert(
+        "Sair sem salvar?",
+        "Você tem alterações que ainda não foram salvas.",
+        [
+          {
+            text: "Sair sem salvar",
+            style: "destructive",
+            onPress: () => navigation.dispatch(e.data.action),
+          },
+          {
+            text: "Salvar e sair",
+            onPress: async () => {
+              await salvar();
+              navigation.dispatch(e.data.action);
+            },
+          },
+        ]
+      );
+    });
+
+    return unsubscribe;
+  }, [navigation, temAlteracaoPendente, nome, telefone, senhaAtual, novaSenha, confirmarNovaSenha, novaFotoUri, fotoRemovidaPendente, salvando]);
+
   const iniciais = nome
     .split(" ")
     .filter(Boolean)
     .slice(0, 2)
     .map((n) => n[0]?.toUpperCase())
     .join("");
+
+  // Formata o telefone conforme o usuário digita: (11) 99999-9999
+  function formatarTelefone(texto = "") {
+    let numeros = texto.replace(/\D/g, "");
+    numeros = numeros.slice(0, 11);
+
+    if (numeros.length <= 10) {
+      // Fixo ou celular sem o 9: (11) 9999-9999
+      numeros = numeros.replace(/(\d{2})(\d)/, "($1) $2");
+      numeros = numeros.replace(/(\d{4})(\d)/, "$1-$2");
+    } else {
+      // Celular com 9 dígitos: (11) 99999-9999
+      numeros = numeros.replace(/(\d{2})(\d)/, "($1) $2");
+      numeros = numeros.replace(/(\d{5})(\d)/, "$1-$2");
+    }
+
+    return numeros;
+  }
 
   if (carregando) {
     return (
@@ -292,7 +378,7 @@ export default function Perfil() {
           <Text style={s.lbl}>Telefone</Text>
           <TextInput
             value={telefone}
-            onChangeText={setTelefone}
+            onChangeText={(texto) => setTelefone(formatarTelefone(texto))}
             style={s.i}
             placeholder="(11) 99999-9999"
             placeholderTextColor="#666"

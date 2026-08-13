@@ -18,4 +18,6 @@ model Usuario {
   cpf      String  @unique
   telefone String?
   foto     String?
+  cidade   String?
+  estado   String?
 }
