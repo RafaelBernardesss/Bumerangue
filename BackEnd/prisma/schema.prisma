@@ -20,4 +20,32 @@ model Usuario {
   foto     String?
   cidade   String?
   estado   String?
+  anuncios Anuncio[]
+}
+
+model Categoria{
+  id Int @id @default(autoincrement())
+  nome String @unique
+  anuncios Anuncio[]
+}
+
+model Anuncio{
+  id Int @id @default(autoincrement())
+  titulo String
+  descricao String
+  preferencia String
+  foto String?
+  status String @default("ativo") //ativo, vendido e pausado
+  criadoEm DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id])
+  usuarioId Int
+
+  categoria Categoria @relation(fields: [categoriaId], references: [id])
+  categoriaId Int
+}
+
+model mensagens{
+  id Int @id @default(autoincrement())
 }

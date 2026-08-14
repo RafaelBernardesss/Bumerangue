@@ -5,6 +5,7 @@ import {
   removerFotoPerfil,
   atualizarNomeUsuario,
   atualizarTelefone,
+  atualizarLocalizacao,
   redefinirSenha,
   excluirConta,
 } from "../controllers/usuarioController.js";
@@ -18,6 +19,7 @@ router.put("/:id/foto", uploadFoto.single("foto"), atualizarFotoPerfil);
 router.delete("/:id/foto", removerFotoPerfil);
 router.put("/:id/nome", atualizarNomeUsuario);
 router.put("/:id/telefone", atualizarTelefone);
+router.put("/:id/localizacao", atualizarLocalizacao);
 router.put("/:id/senha", redefinirSenha);
 router.delete("/:id", excluirConta);
 

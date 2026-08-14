@@ -7,6 +7,9 @@ import {
   TouchableOpacity,
   TextInput,
   Alert,
+  KeyboardAvoidingView,
+  ScrollView,
+  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -113,106 +116,116 @@ export default function Cadastro() {
       </View>
 
       {/* CONTEÚDO */}
-      <View style={styles.formContainer}>
-        {/* Avatar */}
-        <View style={styles.avatarContainer}>
-          <View style={styles.avatar}>
-            <Ionicons
-              name="person-outline"
-              size={36}
-              color="#fff"
-            />
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0}
+      >
+        <ScrollView
+          contentContainerStyle={styles.formContainer}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Avatar */}
+          <View style={styles.avatarContainer}>
+            <View style={styles.avatar}>
+              <Ionicons
+                name="person-outline"
+                size={36}
+                color="#fff"
+              />
+            </View>
           </View>
-        </View>
 
-        <Text style={styles.title}>
-          Cadastre-se
-        </Text>
-
-        <Text style={styles.subtitle}>
-          Crie sua conta e faça parte da
-          nossa comunidade
-        </Text>
-
-        {/* INPUTS */}
-        <Text style={styles.label}>
-          Nome Completo
-        </Text>
-
-        <TextInput
-          style={styles.input}
-          placeholder="Digite seu nome"
-          placeholderTextColor="#777"
-          value={nome}
-          onChangeText={setNome}
-        />
-
-        <Text style={styles.label}>
-          CPF
-        </Text>
-
-        <TextInput
-          style={styles.input}
-          placeholder="000.000.000-00"
-          placeholderTextColor="#777"
-          keyboardType="numeric"
-          value={cpf}
-          onChangeText={(text) => setCpf(formatarCPF(text))}
-        />
-
-        <Text style={styles.label}>
-          Email
-        </Text>
-
-        <TextInput
-          style={styles.input}
-          placeholder="exemplo@gmail.com"
-          placeholderTextColor="#777"
-          keyboardType="email-address"
-          autoCapitalize="none"
-          value={email}
-          onChangeText={setEmail}
-        />
-
-        <Text style={styles.label}>
-          Senha
-        </Text>
-
-        <TextInput
-          style={styles.input}
-          placeholder="******"
-          placeholderTextColor="#777"
-          secureTextEntry
-          value={senha}
-          onChangeText={setSenha}
-        />
-
-        {/* BOTÃO */}
-        <TouchableOpacity
-          style={styles.botaoPrimario}
-          onPress={cadastrar}
-        >
-          <Text style={styles.botaoTexto}>
-            Criar conta
+          <Text style={styles.title}>
+            Cadastre-se
           </Text>
-        </TouchableOpacity>
 
-        {/* LOGIN */}
-        <TouchableOpacity
-          style={styles.botaoSecundario}
-          onPress={() =>
-            router.push("/login")
-          }
-        >
-          <Text
-            style={
-              styles.botaoSecundarioTexto
+          <Text style={styles.subtitle}>
+            Crie sua conta e faça parte da
+            nossa comunidade
+          </Text>
+
+          {/* INPUTS */}
+          <Text style={styles.label}>
+            Nome Completo
+          </Text>
+
+          <TextInput
+            style={styles.input}
+            placeholder="Digite seu nome"
+            placeholderTextColor="#777"
+            value={nome}
+            onChangeText={setNome}
+          />
+
+          <Text style={styles.label}>
+            CPF
+          </Text>
+
+          <TextInput
+            style={styles.input}
+            placeholder="000.000.000-00"
+            placeholderTextColor="#777"
+            keyboardType="numeric"
+            value={cpf}
+            onChangeText={(text) => setCpf(formatarCPF(text))}
+          />
+
+          <Text style={styles.label}>
+            Email
+          </Text>
+
+          <TextInput
+            style={styles.input}
+            placeholder="exemplo@gmail.com"
+            placeholderTextColor="#777"
+            keyboardType="email-address"
+            autoCapitalize="none"
+            value={email}
+            onChangeText={setEmail}
+          />
+
+          <Text style={styles.label}>
+            Senha
+          </Text>
+
+          <TextInput
+            style={styles.input}
+            placeholder="******"
+            placeholderTextColor="#777"
+            secureTextEntry
+            value={senha}
+            onChangeText={setSenha}
+          />
+
+          {/* BOTÃO */}
+          <TouchableOpacity
+            style={styles.botaoPrimario}
+            onPress={cadastrar}
+          >
+            <Text style={styles.botaoTexto}>
+              Criar conta
+            </Text>
+          </TouchableOpacity>
+
+          {/* LOGIN */}
+          <TouchableOpacity
+            style={styles.botaoSecundario}
+            onPress={() =>
+              router.push("/login")
             }
           >
-            Já tenho uma conta
-          </Text>
-        </TouchableOpacity>
-      </View>
+            <Text
+              style={
+                styles.botaoSecundarioTexto
+              }
+            >
+              Já tenho uma conta
+            </Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -230,10 +243,11 @@ const styles = StyleSheet.create({
   },
 
   formContainer: {
-    flex: 1,
+    flexGrow: 1,
     alignItems: "center",
     paddingHorizontal: 24,
     paddingTop: 40,
+    paddingBottom: 40,
   },
 
   avatarContainer: {
