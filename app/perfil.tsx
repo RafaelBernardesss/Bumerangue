@@ -12,7 +12,7 @@ import Header from "../components/HeaderEscolha";
 // Ajuste esse IP para o IP da sua máquina rodando o backend (o mesmo que aparece
 // no erro do Expo, ex: 192.168.18.7). Não use "localhost" pois no celular físico
 // ou emulador isso não aponta para o seu PC.
-const API_URL = "http://192.168.18.7:3000";
+const API_URL = "http://172.30.0.142:3000";
 
 export default function Perfil() {
   const router = useRouter();
