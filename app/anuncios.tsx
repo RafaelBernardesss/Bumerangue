@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Image,
   Alert,
+  BackHandler,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
@@ -66,6 +67,28 @@ export default function Home() {
       }
 
       atualizarUsuario();
+    }, [])
+  );
+
+  // Como essa tela é a raiz da pilha (depois do login/cadastro), o botão
+  // "voltar" do Android sairia do app direto. Aqui a gente pede confirmação
+  // em vez de fechar sem avisar.
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        Alert.alert("Sair do app", "Deseja sair do aplicativo?", [
+          { text: "Cancelar", style: "cancel" },
+          { text: "Sair", style: "destructive", onPress: () => BackHandler.exitApp() },
+        ]);
+        return true; // bloqueia o comportamento padrão (sair sem avisar)
+      };
+
+      const subscription = BackHandler.addEventListener(
+        "hardwareBackPress",
+        onBackPress
+      );
+
+      return () => subscription.remove();
     }, [])
   );
 
@@ -233,7 +256,7 @@ export default function Home() {
         {/* SERVIÇOS */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle} numberOfLines={1}>
-            Destaques para você
+            Serviços em destaque
           </Text>
           <TouchableOpacity
             style={styles.linkButton}

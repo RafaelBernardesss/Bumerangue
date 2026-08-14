@@ -90,8 +90,8 @@ export default function Cadastro() {
         setEmail("");
         setSenha("");
 
-        // Vai para a tela de login
-        router.push("/login");
+        // Vai para a tela de login (replace = não deixa voltar pro cadastro)
+        router.replace("/login");
       } else {
         Alert.alert(
           "Erro",
