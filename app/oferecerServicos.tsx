@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -6,11 +6,190 @@ import {
   TouchableOpacity,
   ScrollView,
   StyleSheet,
+  Image,
+  Alert,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useRouter } from "expo-router";
+import { useFocusEffect } from "@react-navigation/native";
 import Header from "../components/HeaderEscolha";
 
+const API_URL = "http://172.30.1.25:3000";
+
+type Categoria = {
+  id: number;
+  nome: string;
+};
+
 export default function PublicarServico() {
+  const router = useRouter();
+
+  const [carregandoCategorias, setCarregandoCategorias] = useState(true);
+  const [categorias, setCategorias] = useState<Categoria[]>([]);
+  const [categoriaSelecionada, setCategoriaSelecionada] = useState<number | null>(null);
+
+  const [titulo, setTitulo] = useState("");
+  const [descricao, setDescricao] = useState("");
+  const [preferencia, setPreferencia] = useState("");
+  const [disponibilidade, setDisponibilidade] = useState("");
+
+  const [fotoUri, setFotoUri] = useState<string | null>(null);
+
+  const [nomeUsuario, setNomeUsuario] = useState("");
+  const [cidadeUsuario, setCidadeUsuario] = useState("");
+  const [estadoUsuario, setEstadoUsuario] = useState("");
+
+  const [publicando, setPublicando] = useState(false);
+
+  // Recarrega categorias e dados do usuário (nome/localização) toda vez que a tela ganha foco
+  useFocusEffect(
+    useCallback(() => {
+      carregarCategorias();
+      carregarUsuario();
+    }, [])
+  );
+
+  async function carregarCategorias() {
+    try {
+      setCarregandoCategorias(true);
+      const resposta = await fetch(`${API_URL}/categorias`);
+      const dados = await resposta.json();
+
+      if (resposta.ok) {
+        setCategorias(dados.categorias);
+      }
+    } catch (erro) {
+      console.log(erro);
+    } finally {
+      setCarregandoCategorias(false);
+    }
+  }
+
+  async function carregarUsuario() {
+    try {
+      const id = await AsyncStorage.getItem("usuarioId");
+      if (!id) return;
+
+      const resposta = await fetch(`${API_URL}/usuarios/${id}`);
+      const dados = await resposta.json();
+
+      if (resposta.ok) {
+        setNomeUsuario(dados.usuario.nome);
+        setCidadeUsuario(dados.usuario.cidade || "");
+        setEstadoUsuario(dados.usuario.estado || "");
+      }
+    } catch (erro) {
+      console.log(erro);
+    }
+  }
+
+  async function escolherFoto() {
+    const permissao = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permissao.granted) {
+      Alert.alert("Permissão necessária", "Permita o acesso às fotos pra continuar.");
+      return;
+    }
+
+    const resultado = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      quality: 0.8,
+    });
+
+    if (!resultado.canceled) {
+      setFotoUri(resultado.assets[0].uri);
+    }
+  }
+
+  async function publicarServico() {
+    if (!titulo.trim() || titulo.trim().length < 3) {
+      Alert.alert("Campo obrigatório", "Informe um título com pelo menos 3 caracteres.");
+      return;
+    }
+
+    if (!descricao.trim() || descricao.trim().length < 5) {
+      Alert.alert("Campo obrigatório", "Informe uma descrição com pelo menos 5 caracteres.");
+      return;
+    }
+
+    if (!preferencia.trim()) {
+      Alert.alert("Campo obrigatório", "Informe sua preferência de troca.");
+      return;
+    }
+
+    if (!categoriaSelecionada) {
+      Alert.alert("Categoria obrigatória", "Escolha uma categoria para o serviço.");
+      return;
+    }
+
+    const idUsuario = await AsyncStorage.getItem("usuarioId");
+    if (!idUsuario) {
+      Alert.alert("Sessão expirada", "Faça login novamente.");
+      router.replace("/login");
+      return;
+    }
+
+    try {
+      setPublicando(true);
+
+      const formData = new FormData();
+      formData.append("titulo", titulo.trim());
+      formData.append("descricao", descricao.trim());
+      formData.append("preferencia", preferencia.trim());
+      formData.append("disponibilidade", disponibilidade.trim());
+      formData.append("categoriaId", String(categoriaSelecionada));
+      formData.append("usuarioId", idUsuario);
+
+      if (fotoUri) {
+        const nomeArquivo = fotoUri.split("/").pop() || "foto.jpg";
+        const extensao = nomeArquivo.split(".").pop();
+
+        formData.append("foto", {
+          uri: fotoUri,
+          name: nomeArquivo,
+          type: `image/${extensao === "jpg" ? "jpeg" : extensao}`,
+        } as any);
+      }
+
+      const resposta = await fetch(`${API_URL}/anuncios`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+        body: formData,
+      });
+
+      const dados = await resposta.json();
+
+      if (!resposta.ok) {
+        throw new Error(dados.erro || "Não foi possível publicar o serviço.");
+      }
+
+      Alert.alert("Sucesso", "Serviço publicado com sucesso!");
+
+      // Limpa o formulário
+      setTitulo("");
+      setDescricao("");
+      setPreferencia("");
+      setDisponibilidade("");
+      setFotoUri(null);
+      setCategoriaSelecionada(null);
+
+      router.push("/verAnuncio");
+    } catch (erro: any) {
+      Alert.alert("Erro", erro.message || "Não foi possível conectar ao servidor.");
+    } finally {
+      setPublicando(false);
+    }
+  }
+
+  const localizacaoTexto =
+    cidadeUsuario && estadoUsuario
+      ? `${cidadeUsuario} - ${estadoUsuario}`
+      : cidadeUsuario || estadoUsuario || "Defina sua localização no perfil";
+
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
@@ -31,14 +210,8 @@ export default function PublicarServico() {
         style={styles.input}
         placeholder="Criação de Sites Profissionais"
         placeholderTextColor="#888"
-      />
-
-      {/* Categoria */}
-      <Text style={styles.label}>Categoria</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Programação"
-        placeholderTextColor="#888"
+        value={titulo}
+        onChangeText={setTitulo}
       />
 
       {/* Descrição */}
@@ -49,116 +222,133 @@ export default function PublicarServico() {
         numberOfLines={5}
         placeholder="Descreva seu serviço..."
         placeholderTextColor="#888"
+        value={descricao}
+        onChangeText={setDescricao}
       />
 
-      {/* Preço e Tempo */}
+      {/* Preferência e Disponibilidade */}
       <View style={styles.row}>
         <View style={styles.half}>
-          <Text style={styles.label}>Preço</Text>
+          <Text style={styles.label}>Preferência de troca</Text>
           <TextInput
             style={styles.input}
-            placeholder="R$ 150,00"
+            placeholder="Ex: dinheiro, permuta..."
             placeholderTextColor="#888"
+            value={preferencia}
+            onChangeText={setPreferencia}
           />
         </View>
 
-        <View style={styles.half}>
-          <Text style={styles.label}>Tempo de entrega</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="2 dias"
-            placeholderTextColor="#888"
-          />
-        </View>
-      </View>
-
-      {/* Tags */}
-      <Text style={styles.label}>Tags (até 5)</Text>
-
-      <View style={styles.tagsContainer}>
-        <TouchableOpacity style={styles.tag}>
-          <Text style={styles.tagText}>React</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tag}>
-          <Text style={styles.tagText}>React Native</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tag}>
-          <Text style={styles.tagText}>JavaScript</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tag}>
-          <Text style={styles.tagText}>Design</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tag}>
-          <Text style={styles.tagText}>HTML/CSS</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Upload */}
-      <Text style={styles.label}>Imagem / Portfólio</Text>
-
-      <TouchableOpacity style={styles.uploadBox}>
-        <Ionicons name="cloud-upload-outline" size={40} color="#00AFFF" />
-        <Text style={styles.uploadText}>
-          Clique para enviar imagens
-        </Text>
-        <Text style={styles.uploadSub}>PNG ou JPG até 10MB</Text>
-      </TouchableOpacity>
-
-      {/* Disponibilidade e Localização */}
-      <View style={styles.row}>
         <View style={styles.half}>
           <Text style={styles.label}>Disponibilidade</Text>
           <TextInput
             style={styles.input}
-            placeholder="Online agora"
+            placeholder="Ex: Seg a sex, 8h-18h"
             placeholderTextColor="#888"
-          />
-        </View>
-
-        <View style={styles.half}>
-          <Text style={styles.label}>Localização</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="São Paulo - SP"
-            placeholderTextColor="#888"
+            value={disponibilidade}
+            onChangeText={setDisponibilidade}
           />
         </View>
       </View>
 
+      {/* Categoria */}
+      <Text style={styles.label}>Categoria</Text>
+
+      {carregandoCategorias ? (
+        <ActivityIndicator color="#00AFFF" style={{ marginTop: 10 }} />
+      ) : categorias.length === 0 ? (
+        <Text style={styles.avisoVazio}>
+          Nenhuma categoria cadastrada ainda.
+        </Text>
+      ) : (
+        <View style={styles.tagsContainer}>
+          {categorias.map((categoria) => {
+            const selecionada = categoriaSelecionada === categoria.id;
+            return (
+              <TouchableOpacity
+                key={categoria.id}
+                style={[styles.tag, selecionada && styles.tagSelecionada]}
+                onPress={() => setCategoriaSelecionada(categoria.id)}
+              >
+                <Text
+                  style={[
+                    styles.tagText,
+                    selecionada && styles.tagTextSelecionada,
+                  ]}
+                >
+                  {categoria.nome}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      )}
+
+      {/* Upload */}
+      <Text style={styles.label}>Foto do serviço</Text>
+
+      <TouchableOpacity style={styles.uploadBox} onPress={escolherFoto}>
+        {fotoUri ? (
+          <Image source={{ uri: fotoUri }} style={styles.fotoPreview} />
+        ) : (
+          <>
+            <Ionicons name="cloud-upload-outline" size={40} color="#00AFFF" />
+            <Text style={styles.uploadText}>Clique para enviar uma imagem</Text>
+            <Text style={styles.uploadSub}>PNG ou JPG até 10MB</Text>
+          </>
+        )}
+      </TouchableOpacity>
+
+      {/* Localização (somente leitura, vem do Perfil) */}
+      <Text style={styles.label}>Localização</Text>
+      <View style={styles.localizacaoBox}>
+        <Ionicons name="location-outline" size={18} color="#00AFFF" />
+        <Text style={styles.localizacaoTexto}>{localizacaoTexto}</Text>
+      </View>
+      <Text style={styles.localizacaoAviso}>
+        Pra mudar, atualize sua localização na tela de Perfil.
+      </Text>
+
       {/* Botão */}
-      <TouchableOpacity style={styles.button}>
-        <Ionicons name="paper-plane" size={20} color="#fff" />
-        <Text style={styles.buttonText}>PUBLICAR SERVIÇO</Text>
+      <TouchableOpacity
+        style={styles.button}
+        onPress={publicarServico}
+        disabled={publicando}
+      >
+        {publicando ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <>
+            <Ionicons name="paper-plane" size={20} color="#fff" />
+            <Text style={styles.buttonText}>PUBLICAR SERVIÇO</Text>
+          </>
+        )}
       </TouchableOpacity>
 
       {/* Preview */}
       <Text style={styles.previewTitle}>Seu anúncio ficará assim:</Text>
 
       <View style={styles.card}>
-        <View style={styles.avatar} />
+        {fotoUri ? (
+          <Image source={{ uri: fotoUri }} style={styles.avatar} />
+        ) : (
+          <View style={styles.avatar} />
+        )}
 
         <View style={{ flex: 1 }}>
-          <Text style={styles.userName}>João Silva ✓</Text>
+          <Text style={styles.userName}>{nomeUsuario || "Seu nome"}</Text>
 
           <Text style={styles.serviceTitle}>
-            Criação de Sites Profissionais
+            {titulo || "Título do serviço"}
           </Text>
-
-          <Text style={styles.rating}>★★★★★ (32 avaliações)</Text>
 
           <Text style={styles.info}>
-            Entrega em 2 dias • São Paulo - SP
+            {disponibilidade || "Disponibilidade"} • {localizacaoTexto}
           </Text>
         </View>
-
-        <View style={styles.priceBox}>
-          <Text style={styles.price}>R$ 150,00</Text>
-        </View>
       </View>
+
+      <View style={{ height: 40 }} />
     </ScrollView>
   );
 }
@@ -175,12 +365,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-  },
-
-  logo: {
-    color: "#00AFFF",
-    fontSize: 28,
-    fontWeight: "bold",
   },
 
   titleContainer: {
@@ -224,10 +408,11 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: "row",
     justifyContent: "space-between",
+    gap: 12,
   },
 
   half: {
-    width: "48%",
+    flex: 1,
   },
 
   tagsContainer: {
@@ -244,8 +429,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
   },
 
+  tagSelecionada: {
+    backgroundColor: "#00AFFF",
+  },
+
   tagText: {
     color: "#00AFFF",
+  },
+
+  tagTextSelecionada: {
+    color: "#0B0B0B",
+    fontWeight: "700",
+  },
+
+  avisoVazio: {
+    color: "#888",
+    marginTop: 5,
   },
 
   uploadBox: {
@@ -256,6 +455,13 @@ const styles = StyleSheet.create({
     padding: 30,
     alignItems: "center",
     marginTop: 10,
+    overflow: "hidden",
+  },
+
+  fotoPreview: {
+    width: "100%",
+    height: 180,
+    borderRadius: 8,
   },
 
   uploadText: {
@@ -267,6 +473,28 @@ const styles = StyleSheet.create({
   uploadSub: {
     color: "#888",
     marginTop: 5,
+  },
+
+  localizacaoBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: "#0D1626",
+    borderWidth: 1,
+    borderColor: "#1F3C5E",
+    borderRadius: 12,
+    padding: 15,
+  },
+
+  localizacaoTexto: {
+    color: "#fff",
+    fontSize: 15,
+  },
+
+  localizacaoAviso: {
+    color: "#888",
+    fontSize: 12,
+    marginTop: 6,
   },
 
   button: {
@@ -308,7 +536,7 @@ const styles = StyleSheet.create({
   avatar: {
     width: 70,
     height: 70,
-    borderRadius: 35,
+    borderRadius: 12,
     backgroundColor: "#333",
     marginRight: 15,
   },
@@ -326,25 +554,8 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
 
-  rating: {
-    color: "#FFD700",
-    marginTop: 5,
-  },
-
   info: {
     color: "#9CA3AF",
     marginTop: 5,
-  },
-
-  priceBox: {
-    backgroundColor: "#00AFFF",
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-    borderRadius: 10,
-  },
-
-  price: {
-    color: "#fff",
-    fontWeight: "bold",
   },
 });

@@ -35,7 +35,13 @@ model Anuncio{
   descricao String
   preferencia String
   foto String?
-  status String @default("ativo") //ativo, vendido e pausado
+  disponibilidade String?        
+  status String @default("ativo") 
+
+  
+  cidade String?                  
+  estado String?                  
+
   criadoEm DateTime @default(now())
   atualizadoEm DateTime @updatedAt
 
@@ -44,8 +50,4 @@ model Anuncio{
 
   categoria Categoria @relation(fields: [categoriaId], references: [id])
   categoriaId Int
-}
-
-model mensagens{
-  id Int @id @default(autoincrement())
 }

@@ -12,8 +12,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import Header from "../components/HeaderEscolha";
 
-// TODO: mover para um arquivo compartilhado (ex: data/anuncios.ts) e importar
-// tanto aqui quanto na tela de listagem, evitando duplicar os dados mockados.
+ 
 type Anuncio = {
   id: string;
   nome: string;
@@ -23,7 +22,7 @@ type Anuncio = {
   avaliacoes: number;
   entrega: string;
   local: string;
-  preco: string;
+  preferencia: string;
   categoria: string;
 };
 
@@ -38,7 +37,7 @@ const ANUNCIOS: Anuncio[] = [
     avaliacoes: 32,
     entrega: "2 dias",
     local: "São Paulo - SP",
-    preco: "R$ 150,00",
+    preferencia: "Jardineiro",
     categoria: "Programação",
   },
   {
@@ -51,7 +50,7 @@ const ANUNCIOS: Anuncio[] = [
     avaliacoes: 58,
     entrega: "3 dias",
     local: "Rio de Janeiro - RJ",
-    preco: "R$ 200,00",
+    preferencia: "Programador",
     categoria: "Design",
   },
   {
@@ -64,7 +63,7 @@ const ANUNCIOS: Anuncio[] = [
     avaliacoes: 12,
     entrega: "7 dias",
     local: "Curitiba - PR",
-    preco: "R$ 800,00",
+   preferencia: "Pedreiro",
     categoria: "Programação",
   },
   {
@@ -77,7 +76,7 @@ const ANUNCIOS: Anuncio[] = [
     avaliacoes: 45,
     entrega: "1 dia",
     local: "Belo Horizonte - MG",
-    preco: "R$ 90,00",
+    preferencia: "Mecanico",
     categoria: "Vídeo",
   },
 ];
@@ -172,8 +171,8 @@ export default function DetalheAnuncio() {
         <Text style={styles.descricao}>{anuncio.descricao}</Text>
 
         <View style={styles.priceBox}>
-          <Text style={styles.priceLabel}>Valor de referência</Text>
-          <Text style={styles.price}>{anuncio.preco}</Text>
+          <Text style={styles.priceLabel}>Preferencia de Troca</Text>
+          <Text style={styles.price}>{anuncio.preferencia}</Text>
         </View>
 
         {/* Proposta de troca */}

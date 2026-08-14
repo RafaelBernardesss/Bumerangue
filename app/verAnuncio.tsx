@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -7,77 +7,116 @@ import {
   ScrollView,
   StyleSheet,
   FlatList,
+  Image,
+  ActivityIndicator,
+  RefreshControl,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Header from "../components/HeaderEscolha";
 import { router } from "expo-router";
+import { useFocusEffect } from "@react-navigation/native";
+
+const API_URL = "http://172.30.1.25:3000";
 
 type Anuncio = {
-  id: string;
-  nome: string;
-  verificado: boolean;
-  servico: string;
-  avaliacoes: number;
-  entrega: string;
-  local: string;
-  categoria: string;
+  id: number;
+  titulo: string;
+  descricao: string;
+  preferencia: string;
+  foto: string | null;
+  disponibilidade: string | null;
+  status: string;
+  cidade: string | null;
+  estado: string | null;
+  usuario: {
+    id: number;
+    nome: string;
+    foto: string | null;
+  };
+  categoria: {
+    id: number;
+    nome: string;
+  };
 };
 
-const ANUNCIOS: Anuncio[] = [
-  {
-    id: "1",
-    nome: "João Silva",
-    verificado: true,
-    servico: "Criação de Sites Profissionais",
-    avaliacoes: 32,
-    entrega: "2 dias",
-    local: "São Paulo - SP",
-    categoria: "Programação",
-  },
-  {
-    id: "2",
-    nome: "Maria Oliveira",
-    verificado: true,
-    servico: "Design de Logotipo e Identidade Visual",
-    avaliacoes: 58,
-    entrega: "3 dias",
-    local: "Rio de Janeiro - RJ",
-    categoria: "Design",
-  },
-  {
-    id: "3",
-    nome: "Carlos Souza",
-    verificado: false,
-    servico: "Desenvolvimento de App React Native",
-    avaliacoes: 12,
-    entrega: "7 dias",
-    local: "Curitiba - PR",
-    categoria: "Programação",
-  },
-  {
-    id: "4",
-    nome: "Ana Costa",
-    verificado: true,
-    servico: "Edição de Vídeos para Redes Sociais",
-    avaliacoes: 45,
-    entrega: "1 dia",
-    local: "Belo Horizonte - MG",
-    categoria: "Vídeo",
-  },
-];
-
-const CATEGORIAS = ["Todos", "Programação", "Design", "Vídeo", "Marketing"];
+type Categoria = {
+  id: number;
+  nome: string;
+};
 
 export default function AnunciosDisponiveis() {
-  const [categoriaAtiva, setCategoriaAtiva] = useState("Todos");
+  const [categoriaAtiva, setCategoriaAtiva] = useState<number | "Todos">("Todos");
   const [busca, setBusca] = useState("");
 
-  const anunciosFiltrados = ANUNCIOS.filter((a) => {
-    const bateCategoria = categoriaAtiva === "Todos" || a.categoria === categoriaAtiva;
-    const bateBusca = a.servico.toLowerCase().includes(busca.toLowerCase()) ||
-      a.nome.toLowerCase().includes(busca.toLowerCase());
+  const [categorias, setCategorias] = useState<Categoria[]>([]);
+  const [anuncios, setAnuncios] = useState<Anuncio[]>([]);
+  const [carregando, setCarregando] = useState(true);
+  const [atualizando, setAtualizando] = useState(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      carregarDados();
+    }, [])
+  );
+
+  async function carregarDados() {
+    try {
+      setCarregando(true);
+      await Promise.all([carregarAnuncios(), carregarCategorias()]);
+    } finally {
+      setCarregando(false);
+    }
+  }
+
+  async function carregarAnuncios() {
+    try {
+      // Só traz os anúncios prontos pra troca (status "ativo")
+      const resposta = await fetch(`${API_URL}/anuncios?status=ativo`);
+      const dados = await resposta.json();
+
+      if (resposta.ok) {
+        setAnuncios(dados.anuncios);
+      }
+    } catch (erro) {
+      console.log(erro);
+    }
+  }
+
+  async function carregarCategorias() {
+    try {
+      const resposta = await fetch(`${API_URL}/categorias`);
+      const dados = await resposta.json();
+
+      if (resposta.ok) {
+        setCategorias(dados.categorias);
+      }
+    } catch (erro) {
+      console.log(erro);
+    }
+  }
+
+  async function aoAtualizar() {
+    setAtualizando(true);
+    await carregarDados();
+    setAtualizando(false);
+  }
+
+  const anunciosFiltrados = anuncios.filter((item) => {
+    const bateCategoria =
+      categoriaAtiva === "Todos" || item.categoria.id === categoriaAtiva;
+
+    const termo = busca.toLowerCase();
+    const bateBusca =
+      item.titulo.toLowerCase().includes(termo) ||
+      item.usuario.nome.toLowerCase().includes(termo);
+
     return bateCategoria && bateBusca;
   });
+
+  function formatarLocal(item: Anuncio) {
+    if (item.cidade && item.estado) return `${item.cidade} - ${item.estado}`;
+    return item.cidade || item.estado || "Localização não informada";
+  }
 
   return (
     <View style={styles.container}>
@@ -87,7 +126,14 @@ export default function AnunciosDisponiveis() {
 
       <FlatList
         data={anunciosFiltrados}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => String(item.id)}
+        refreshControl={
+          <RefreshControl
+            refreshing={atualizando}
+            onRefresh={aoAtualizar}
+            tintColor="#00AFFF"
+          />
+        }
         ListHeaderComponent={
           <>
             <View style={styles.titleContainer}>
@@ -114,54 +160,94 @@ export default function AnunciosDisponiveis() {
               style={styles.categoriasScroll}
               contentContainerStyle={styles.categoriasContainer}
             >
-              {CATEGORIAS.map((cat) => {
-                const ativa = cat === categoriaAtiva;
+              <TouchableOpacity
+                style={[
+                  styles.categoriaTag,
+                  categoriaAtiva === "Todos" && styles.categoriaTagAtiva,
+                ]}
+                onPress={() => setCategoriaAtiva("Todos")}
+              >
+                <Text
+                  style={[
+                    styles.categoriaTagText,
+                    categoriaAtiva === "Todos" && styles.categoriaTagTextAtiva,
+                  ]}
+                >
+                  Todos
+                </Text>
+              </TouchableOpacity>
+
+              {categorias.map((cat) => {
+                const ativa = cat.id === categoriaAtiva;
                 return (
                   <TouchableOpacity
-                    key={cat}
+                    key={cat.id}
                     style={[styles.categoriaTag, ativa && styles.categoriaTagAtiva]}
-                    onPress={() => setCategoriaAtiva(cat)}
+                    onPress={() => setCategoriaAtiva(cat.id)}
                   >
-                    <Text style={[styles.categoriaTagText, ativa && styles.categoriaTagTextAtiva]}>
-                      {cat}
+                    <Text
+                      style={[
+                        styles.categoriaTagText,
+                        ativa && styles.categoriaTagTextAtiva,
+                      ]}
+                    >
+                      {cat.nome}
                     </Text>
                   </TouchableOpacity>
                 );
               })}
             </ScrollView>
 
-            <Text style={styles.resultados}>
-              {anunciosFiltrados.length} serviço(s) encontrado(s)
-            </Text>
+            {carregando ? (
+              <ActivityIndicator color="#00AFFF" style={{ marginTop: 30 }} />
+            ) : (
+              <Text style={styles.resultados}>
+                {anunciosFiltrados.length} serviço(s) encontrado(s)
+              </Text>
+            )}
           </>
         }
         renderItem={({ item }) => (
-          <TouchableOpacity style={styles.card}  onPress={() => router.push({ pathname: "/AnuncioScreen", params: { id: item.id } })}>
-            <View style={styles.avatar} />
+          <TouchableOpacity
+            style={styles.card}
+            onPress={() =>
+              router.push({ pathname: "/AnuncioScreen", params: { id: String(item.id) } })
+            }
+          >
+            {item.usuario.foto ? (
+              <Image
+                source={{ uri: `${API_URL}/${item.usuario.foto.replace(/\\/g, "/")}` }}
+                style={styles.avatar}
+              />
+            ) : (
+              <View style={styles.avatar} />
+            )}
 
             <View style={{ flex: 1 }}>
-              <Text style={styles.userName}>
-                {item.nome} {item.verificado && "✓"}
-              </Text>
+              <Text style={styles.userName}>{item.usuario.nome}</Text>
 
-              <Text style={styles.serviceTitle}>{item.servico}</Text>
+              <Text style={styles.serviceTitle}>{item.titulo}</Text>
 
-              <Text style={styles.rating}>★★★★★ ({item.avaliacoes} avaliações)</Text>
+              <View style={styles.categoriaChip}>
+                <Text style={styles.categoriaChipText}>{item.categoria.nome}</Text>
+              </View>
 
               <Text style={styles.info}>
-                Entrega em {item.entrega} • {item.local}
+                {item.disponibilidade ? `${item.disponibilidade} • ` : ""}
+                {formatarLocal(item)}
               </Text>
 
+              <Text style={styles.preferencia}>Troca por: {item.preferencia}</Text>
             </View>
-
-            
           </TouchableOpacity>
         )}
         ListEmptyComponent={
-          <View style={styles.vazioContainer}>
-            <Ionicons name="search-outline" size={40} color="#444" />
-            <Text style={styles.vazioTexto}>Nenhum serviço encontrado</Text>
-          </View>
+          !carregando ? (
+            <View style={styles.vazioContainer}>
+              <Ionicons name="search-outline" size={40} color="#444" />
+              <Text style={styles.vazioTexto}>Nenhum serviço encontrado</Text>
+            </View>
+          ) : null
         }
         contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
       />
@@ -286,20 +372,29 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
 
-  rating: {
-    color: "#FFD700",
-    marginTop: 5,
+  categoriaChip: {
+    alignSelf: "flex-start",
+    backgroundColor: "#161D2E",
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    marginTop: 6,
+  },
+
+  categoriaChipText: {
+    color: "#9CA3AF",
+    fontSize: 11,
   },
 
   info: {
     color: "#9CA3AF",
-    marginTop: 5,
+    marginTop: 6,
   },
 
-
-  price: {
-    color: "#fff",
-    fontWeight: "bold",
+  preferencia: {
+    color: "#666",
+    fontSize: 12,
+    marginTop: 4,
   },
 
   vazioContainer: {

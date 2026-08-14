@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   View,
   Text,
   StyleSheet,
   FlatList,
+  TextInput,
   TouchableOpacity,
   Alert,
   ActivityIndicator,
@@ -13,6 +14,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 
+const API_URL = "http://172.30.1.25:3000";
+
 type Usuario = {
   id: number;
   nome: string;
@@ -20,11 +23,22 @@ type Usuario = {
   email: string;
 };
 
+type Categoria = {
+  id: number;
+  nome: string;
+};
+
 export default function Admin() {
   const router = useRouter();
+
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [atualizando, setAtualizando] = useState(false);
+
+  const [categorias, setCategorias] = useState<Categoria[]>([]);
+  const [carregandoCategorias, setCarregandoCategorias] = useState(true);
+  const [novaCategoria, setNovaCategoria] = useState("");
+  const [criandoCategoria, setCriandoCategoria] = useState(false);
 
   async function buscarUsuarios() {
     try {
@@ -47,9 +61,26 @@ export default function Admin() {
     }
   }
 
+  const buscarCategorias = useCallback(async () => {
+    try {
+      setCarregandoCategorias(true);
+      const resposta = await fetch(`${API_URL}/categorias`);
+      const dados = await resposta.json();
+
+      if (resposta.ok) {
+        setCategorias(dados.categorias);
+      }
+    } catch (erro) {
+      console.log(erro);
+    } finally {
+      setCarregandoCategorias(false);
+    }
+  }, []);
+
   useEffect(() => {
     buscarUsuarios();
-  }, []);
+    buscarCategorias();
+  }, [buscarCategorias]);
 
   function confirmarExclusao(id: number, nome: string) {
     Alert.alert(
@@ -84,9 +115,74 @@ export default function Admin() {
     }
   }
 
+  async function adicionarCategoria() {
+    if (!novaCategoria.trim() || novaCategoria.trim().length < 2) {
+      Alert.alert("Nome inválido", "Digite um nome com pelo menos 2 caracteres.");
+      return;
+    }
+
+    try {
+      setCriandoCategoria(true);
+      const resposta = await fetch(`${API_URL}/categorias`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nome: novaCategoria.trim() }),
+      });
+
+      const dados = await resposta.json();
+
+      if (!resposta.ok) {
+        throw new Error(dados.erro || "Não foi possível criar a categoria.");
+      }
+
+      setCategorias((prev) =>
+        [...prev, dados.categoria].sort((a, b) => a.nome.localeCompare(b.nome))
+      );
+      setNovaCategoria("");
+    } catch (erro: any) {
+      Alert.alert("Erro", erro.message || "Não foi possível conectar ao servidor.");
+    } finally {
+      setCriandoCategoria(false);
+    }
+  }
+
+  function confirmarExclusaoCategoria(id: number, nome: string) {
+    Alert.alert(
+      "Remover categoria",
+      `Tem certeza que deseja remover "${nome}"?`,
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Remover",
+          style: "destructive",
+          onPress: () => deletarCategoria(id),
+        },
+      ]
+    );
+  }
+
+  async function deletarCategoria(id: number) {
+    try {
+      const resposta = await fetch(`${API_URL}/categorias/${id}`, {
+        method: "DELETE",
+      });
+
+      const dados = await resposta.json();
+
+      if (!resposta.ok) {
+        throw new Error(dados.erro || "Não foi possível remover essa categoria.");
+      }
+
+      setCategorias((prev) => prev.filter((c) => c.id !== id));
+    } catch (erro: any) {
+      Alert.alert("Erro", erro.message || "Não foi possível conectar ao servidor.");
+    }
+  }
+
   function onRefresh() {
     setAtualizando(true);
     buscarUsuarios();
+    buscarCategorias();
   }
 
   return (
@@ -116,6 +212,59 @@ export default function Admin() {
               onRefresh={onRefresh}
               tintColor="#00AFFF"
             />
+          }
+          ListHeaderComponent={
+            <View style={styles.secaoCategorias}>
+              <Text style={styles.subtitulo}>Categorias</Text>
+
+              <View style={styles.novaCategoriaRow}>
+                <TextInput
+                  style={styles.inputCategoria}
+                  placeholder="Nome da categoria"
+                  placeholderTextColor="#666"
+                  value={novaCategoria}
+                  onChangeText={setNovaCategoria}
+                  onSubmitEditing={adicionarCategoria}
+                />
+                <TouchableOpacity
+                  style={styles.botaoAdicionar}
+                  onPress={adicionarCategoria}
+                  disabled={criandoCategoria}
+                >
+                  {criandoCategoria ? (
+                    <ActivityIndicator color="#000" size="small" />
+                  ) : (
+                    <Ionicons name="add" size={24} color="#000" />
+                  )}
+                </TouchableOpacity>
+              </View>
+
+              {carregandoCategorias ? (
+                <ActivityIndicator color="#00AFFF" style={{ marginTop: 16 }} />
+              ) : categorias.length === 0 ? (
+                <Text style={styles.vazioCategoria}>
+                  Nenhuma categoria cadastrada ainda.
+                </Text>
+              ) : (
+                <View style={styles.categoriasContainer}>
+                  {categorias.map((categoria) => (
+                    <View key={categoria.id} style={styles.categoriaChip}>
+                      <Text style={styles.categoriaChipTexto}>{categoria.nome}</Text>
+                      <TouchableOpacity
+                        onPress={() =>
+                          confirmarExclusaoCategoria(categoria.id, categoria.nome)
+                        }
+                        hitSlop={8}
+                      >
+                        <Ionicons name="close-circle" size={18} color="#FF6B6B" />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </View>
+              )}
+
+              <Text style={[styles.subtitulo, { marginTop: 28 }]}>Contas</Text>
+            </View>
           }
           ListEmptyComponent={
             <Text style={styles.vazio}>Nenhuma conta encontrada.</Text>
@@ -160,9 +309,65 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: "700",
   },
+  subtitulo: {
+    color: "#FFFFFF",
+    fontSize: 18,
+    fontWeight: "700",
+    marginBottom: 12,
+  },
   lista: {
     paddingHorizontal: 20,
     paddingBottom: 40,
+  },
+  secaoCategorias: {
+    marginBottom: 8,
+  },
+  novaCategoriaRow: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  inputCategoria: {
+    flex: 1,
+    backgroundColor: "#1E1E1E",
+    borderWidth: 1,
+    borderColor: "#2A2A2A",
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    height: 46,
+    color: "#FFFFFF",
+  },
+  botaoAdicionar: {
+    width: 46,
+    height: 46,
+    borderRadius: 12,
+    backgroundColor: "#00AFFF",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  vazioCategoria: {
+    color: "#666",
+    marginTop: 14,
+  },
+  categoriasContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 14,
+  },
+  categoriaChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "#1E1E1E",
+    borderWidth: 1,
+    borderColor: "#2A2A2A",
+    borderRadius: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  categoriaChipTexto: {
+    color: "#FFFFFF",
+    fontSize: 13,
   },
   vazio: {
     color: "#888",

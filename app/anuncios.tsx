@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  TextInput,
   TouchableOpacity,
   Image,
   Alert,
@@ -95,7 +94,6 @@ export default function Home() {
   const router = useRouter();
 
   const [menuAberto, setMenuAberto] = useState(false);
-  const [busca, setBusca] = useState("");
   const [favoritos, setFavoritos] = useState<string[]>([]);
 
   const servicos = [
@@ -128,9 +126,7 @@ export default function Home() {
     { nome: "Aulas de Física", valor: "R$ 70,00" },
   ];
 
-  const servicosFiltrados = servicos.filter((item) =>
-    (item.titulo + item.categoria).toLowerCase().includes(busca.toLowerCase())
-  );
+  const servicosFiltrados = servicos;
 
   function alternarFavorito(titulo: string) {
     setFavoritos((prev: string[]) =>
@@ -138,16 +134,6 @@ export default function Home() {
         ? prev.filter((t: string) => t !== titulo)
         : [...prev, titulo]
     );
-  }
-
-  function abrirFiltros() {
-    Alert.alert("Filtrar por categoria", "Escolha uma categoria", [
-      { text: "Todas", onPress: () => setBusca("") },
-      { text: "Design", onPress: () => setBusca("design") },
-      { text: "Programação", onPress: () => setBusca("programação") },
-      { text: "Aulas", onPress: () => setBusca("aulas") },
-      { text: "Cancelar", style: "cancel" },
-    ]);
   }
 
   // Iniciais pra usar como fallback quando não há foto de perfil
@@ -195,25 +181,6 @@ export default function Home() {
           </TouchableOpacity>
         </View>
 
-        {/* PESQUISA */}
-        <View style={styles.searchRow}>
-          <View style={styles.searchBox}>
-            <Ionicons name="search" size={24} color="#999" />
-            <TextInput
-              placeholder="Buscar serviços..."
-              placeholderTextColor="#999"
-              style={styles.input}
-              value={busca}
-              onChangeText={setBusca}
-            />
-          </View>
-
-          <TouchableOpacity style={styles.filterButton} onPress={abrirFiltros}>
-            <Ionicons name="filter-outline" size={24} color="#fff" />
-            <Text style={styles.filterText}>Filtros</Text>
-          </TouchableOpacity>
-        </View>
-
         {/* AÇÕES */}
         <View style={styles.actions}>
           <TouchableOpacity
@@ -256,7 +223,7 @@ export default function Home() {
         {/* SERVIÇOS */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle} numberOfLines={1}>
-            Serviços em destaque
+            Destaques Para Você
           </Text>
           <TouchableOpacity
             style={styles.linkButton}
