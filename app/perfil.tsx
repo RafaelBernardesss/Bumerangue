@@ -11,7 +11,7 @@ import { useNavigation } from "@react-navigation/native";
 //components
 import Header from "../components/HeaderEscolha";
 
-const API_URL = "http://172.30.1.25:3000";
+const API_URL = "http://172.30.1.41:3000";
 
 // Mapa de nome completo do estado -> sigla (UF), pra converter o que o GPS retorna
 const ESTADOS_UF: Record<string, string> = {
@@ -102,7 +102,6 @@ export default function Perfil() {
   const [novaSenha, setNovaSenha] = useState("");
   const [confirmarNovaSenha, setConfirmarNovaSenha] = useState("");
 
-  // Carrega os dados do usuário logado assim que a tela abre
   useEffect(() => {
     carregarUsuario();
   }, []);

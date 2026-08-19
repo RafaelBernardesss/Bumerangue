@@ -15,12 +15,79 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
 import Header from "../components/Hearder";
 
-const API_URL = "http://172.30.1.25:3000";
+const API_URL = "http://172.30.1.41:3000";
+
+type Anuncio = {
+  id: number;
+  titulo: string;
+  descricao: string;
+  preferencia: string;
+  foto: string | null;
+  disponibilidade: string | null;
+  status: "ativo" | "vendido" | "pausado";
+  cidade: string | null;
+  estado: string | null;
+  criadoEm: string;
+  atualizadoEm: string;
+  usuarioId: number;
+  categoriaId: number;
+  usuario: { id: number; nome: string; foto: string | null };
+  categoria: { id: number; nome: string };
+};
+
+// Monta a URL completa da foto a partir do caminho relativo salvo no banco
+function urlFoto(caminho: string | null) {
+  if (!caminho) return null;
+  return `${API_URL}/${caminho.replace(/\\/g, "/")}`;
+}
+
+// Rótulo e cor do status, seguindo a mesma paleta usada no resto do app
+const CONFIG_STATUS: Record<Anuncio["status"], { label: string; cor: string }> = {
+  ativo: { label: "ATIVO", cor: "#00AFFF" },
+  pausado: { label: "PAUSADO", cor: "#FFB800" },
+  vendido: { label: "TROCADO", cor: "#00FF44" },
+};
 
 export default function Home() {
   const { name: nomeInicial } = useLocalSearchParams();
   const [name, setName] = useState(nomeInicial);
   const [foto, setFoto] = useState<string | null>(null);
+
+  // Quantidade de notificações não lidas, exibida no badge do sino.
+  // TODO: trocar pelo valor real vindo do backend (ex: GET /usuarios/:id/notificacoes/nao-lidas)
+  const [naoLidas, setNaoLidas] = useState(3);
+
+  // Anúncios criados pelo próprio usuário logado (GET /anuncios?usuarioId=:id)
+  const [meusAnuncios, setMeusAnuncios] = useState<Anuncio[]>([]);
+  const [carregandoAnuncios, setCarregandoAnuncios] = useState(true);
+
+  useFocusEffect(
+    useCallback(() => {
+      async function buscarMeusAnuncios() {
+        try {
+          setCarregandoAnuncios(true);
+
+          const id = await AsyncStorage.getItem("usuarioId");
+          if (!id) return;
+
+          const resposta = await fetch(`${API_URL}/anuncios?usuarioId=${id}`);
+          const dados = await resposta.json();
+
+          if (resposta.ok) {
+            setMeusAnuncios(dados.anuncios || []);
+          } else {
+            console.log(dados.erro);
+          }
+        } catch (erro) {
+          console.log(erro);
+        } finally {
+          setCarregandoAnuncios(false);
+        }
+      }
+
+      buscarMeusAnuncios();
+    }, [])
+  );
 
   useFocusEffect(
     useCallback(() => {
@@ -94,47 +161,12 @@ export default function Home() {
   const router = useRouter();
 
   const [menuAberto, setMenuAberto] = useState(false);
-  const [favoritos, setFavoritos] = useState<string[]>([]);
-
-  const servicos = [
-    {
-      titulo: "Criação de Sites",
-      categoria: "DESIGN",
-      nota: "5.0",
-      cidade: "São Paulo - SP",
-      imagem: "https://images.unsplash.com/photo-1498050108023-c5249f4df085",
-    },
-    {
-      titulo: "Desenvolvimento Web",
-      categoria: "PROGRAMAÇÃO",
-      nota: "4.9",
-      cidade: "Rio de Janeiro - RJ",
-      imagem: "https://images.unsplash.com/photo-1515879218367-8466d910aaa4",
-    },
-    {
-      titulo: "Aulas de Matemática",
-      categoria: "AULAS",
-      nota: "5.0",
-      cidade: "São Paulo - SP",
-      imagem: "https://images.unsplash.com/photo-1455390582262-044cdead277a",
-    },
-  ];
 
   const historicoRecente = [
     { nome: "Criação de Logo", valor: "R$ 100,00" },
     { nome: "Correção de Bug", valor: "R$ 80,00" },
     { nome: "Aulas de Física", valor: "R$ 70,00" },
   ];
-
-  const servicosFiltrados = servicos;
-
-  function alternarFavorito(titulo: string) {
-    setFavoritos((prev: string[]) =>
-      prev.includes(titulo)
-        ? prev.filter((t: string) => t !== titulo)
-        : [...prev, titulo]
-    );
-  }
 
   // Iniciais pra usar como fallback quando não há foto de perfil
   const iniciais = (name || "")
@@ -148,7 +180,8 @@ export default function Home() {
   return (
     <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
-        <View>
+        {/* CABEÇALHO */}
+        <View style={styles.headerRow}>
           <Header></Header>
         </View>
 
@@ -186,7 +219,7 @@ export default function Home() {
           <TouchableOpacity
             style={styles.actionCard}
             activeOpacity={0.7}
-            onPress={() => router.push("/verAnuncio")}
+            onPress={() => router.push("/FuncoesAnuncios/ServicoAtivo")}
           >
             <View style={[styles.circle, { backgroundColor: "#00AFFF" }]}>
               <Ionicons name="briefcase-outline" size={26} color="#000" />
@@ -220,10 +253,10 @@ export default function Home() {
           </TouchableOpacity>
         </View>
 
-        {/* SERVIÇOS */}
+        {/* MEUS ANÚNCIOS */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle} numberOfLines={1}>
-            Destaques Para Você
+            Seus Destaques
           </Text>
           <TouchableOpacity
             style={styles.linkButton}
@@ -234,41 +267,64 @@ export default function Home() {
         </View>
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {servicosFiltrados.map((item, index) => {
-            const favoritado = favoritos.includes(item.titulo);
-            return (
-              <View key={index} style={styles.serviceCard}>
-                <Image source={{ uri: item.imagem }} style={styles.serviceImage} />
-
-                <View style={styles.tag}>
-                  <Text style={styles.tagText}>{item.categoria}</Text>
-                </View>
-
-                <TouchableOpacity
-                  style={styles.favorite}
-                  onPress={() => alternarFavorito(item.titulo)}
-                >
-                  <Ionicons
-                    name={favoritado ? "heart" : "heart-outline"}
-                    size={24}
-                    color={favoritado ? "#FF3B6F" : "#fff"}
-                  />
-                </TouchableOpacity>
-
-                <View style={styles.serviceInfo}>
-                  <Text style={styles.serviceTitle}>{item.titulo}</Text>
-                  <Text style={styles.rating}>⭐ {item.nota}</Text>
-                  <Text style={styles.location}>📍 {item.cidade}</Text>
-                </View>
-              </View>
-            );
-          })}
-
-          {servicosFiltrados.length === 0 && (
+          {carregandoAnuncios ? (
             <View style={styles.emptyState}>
-              <Ionicons name="search-outline" size={32} color="#444" />
-              <Text style={styles.emptyText}>Nenhum serviço encontrado</Text>
+              <Text style={styles.emptyText}>Carregando seus anúncios...</Text>
             </View>
+          ) : meusAnuncios.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Ionicons name="pricetag-outline" size={32} color="#444" />
+              <Text style={styles.emptyText}>
+                Não encontramos nenhum Anuncio
+              </Text>
+            </View>
+          ) : (
+            meusAnuncios.map((item) => {
+              const { label, cor } = CONFIG_STATUS[item.status];
+              const foto = urlFoto(item.foto);
+
+              return (
+                <TouchableOpacity
+                  key={item.id}
+                  style={styles.serviceCard}
+                  activeOpacity={0.8}
+                  onPress={() => router.push(`/AnuncioScreen?id=${item.id}`)}
+                >
+                  {foto ? (
+                    <Image source={{ uri: foto }} style={styles.serviceImage} />
+                  ) : (
+                    <View
+                      style={[
+                        styles.serviceImage,
+                        {
+                          backgroundColor: "#161D2E",
+                          justifyContent: "center",
+                          alignItems: "center",
+                        },
+                      ]}
+                    >
+                      <Ionicons name="image-outline" size={36} color="#444" />
+                    </View>
+                  )}
+
+                  <View style={[styles.tag, { backgroundColor: cor }]}>
+                    <Text style={styles.tagText}>{label}</Text>
+                  </View>
+
+                  <View style={styles.serviceInfo}>
+                    <Text style={styles.serviceTitle} numberOfLines={1}>
+                      {item.titulo}
+                    </Text>
+                    <Text style={styles.rating}>{item.categoria.nome}</Text>
+                    {item.cidade && (
+                      <Text style={styles.location}>
+                        📍 {item.cidade} - {item.estado}
+                      </Text>
+                    )}
+                  </View>
+                </TouchableOpacity>
+              );
+            })
           )}
         </ScrollView>
 
@@ -319,7 +375,7 @@ export default function Home() {
           <Ionicons name="home" size={30} color="#00AFFF" />
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => router.push("/verAnuncio")}>
+        <TouchableOpacity onPress={() => router.push("/AnuncioScreen")}>
           <Ionicons name="search" size={30} color="#999" />
         </TouchableOpacity>
 
@@ -348,21 +404,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#0B0B0B",
     paddingTop: 50,
   },
-  notificationBadge: {
-    position: "absolute",
-    right: -5,
-    top: -5,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: "#00AFFF",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  badgeText: {
-    color: "#fff",
-    fontSize: 11,
-    fontWeight: "bold",
+  headerRow: {
+    paddingHorizontal: 0,
   },
   welcomeContainer: {
     flexDirection: "row",

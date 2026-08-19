@@ -17,7 +17,7 @@ import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import Header from "../components/HeaderEscolha";
 
-const API_URL = "http://172.30.1.25:3000";
+const API_URL = "http://172.30.1.41:3000";
 
 type Categoria = {
   id: number;
