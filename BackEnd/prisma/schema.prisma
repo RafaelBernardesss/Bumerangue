@@ -1,13 +1,9 @@
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "sqlite"
-  url = env("DATABASE_URL")
-
- 
 }
 
 model Usuario {
@@ -21,6 +17,12 @@ model Usuario {
   cidade   String?
   estado   String?
   anuncios Anuncio[]
+  notificacoes Notificacao[]
+  expoPushToken String?
+
+  solicitacoesEnviadas SolicitacaoServico[] @relation("SolicitacoesEnviadas")
+  servicosPrestados    ServicoEmAndamento[] @relation("ServicosPrestados")
+  servicosContratados  ServicoEmAndamento[] @relation("ServicosContratados")
 }
 
 model Categoria{
@@ -35,12 +37,11 @@ model Anuncio{
   descricao String
   preferencia String
   foto String?
-  disponibilidade String?        
-  status String @default("ativo") 
+  disponibilidade String?
+  status String @default("ativo")
 
-  
-  cidade String?                  
-  estado String?                  
+  cidade String?
+  estado String?
 
   criadoEm DateTime @default(now())
   atualizadoEm DateTime @updatedAt
@@ -50,4 +51,49 @@ model Anuncio{
 
   categoria Categoria @relation(fields: [categoriaId], references: [id])
   categoriaId Int
+
+  solicitacoes        SolicitacaoServico[]
+  servicosEmAndamento ServicoEmAndamento[]
+}
+
+model Notificacao {
+  id Int @id @default(autoincrement())
+  mensagem String
+  lida Boolean @default(false)
+  criadoEm DateTime @default(now())
+  usuario Usuario @relation(fields: [usuarioId], references: [id])
+  usuarioId Int
+
+  tipo String @default("info")
+  solicitacao   SolicitacaoServico? @relation(fields: [solicitacaoId], references: [id])
+  solicitacaoId Int?
+}
+
+model SolicitacaoServico {
+  id       Int      @id @default(autoincrement())
+  status   String   @default("pendente")
+  criadoEm DateTime @default(now())
+
+  anuncio   Anuncio @relation(fields: [anuncioId], references: [id])
+  anuncioId Int
+
+  solicitante   Usuario @relation("SolicitacoesEnviadas", fields: [solicitanteId], references: [id])
+  solicitanteId Int
+
+  notificacoes Notificacao[]
+}
+
+model ServicoEmAndamento {
+  id       Int      @id @default(autoincrement())
+  status   String   @default("em_andamento")
+  criadoEm DateTime @default(now())
+
+  anuncio   Anuncio @relation(fields: [anuncioId], references: [id])
+  anuncioId Int
+
+  prestador   Usuario @relation("ServicosPrestados", fields: [prestadorId], references: [id])
+  prestadorId Int
+
+  contratante   Usuario @relation("ServicosContratados", fields: [contratanteId], references: [id])
+  contratanteId Int
 }

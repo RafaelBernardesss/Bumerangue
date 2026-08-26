@@ -1,152 +1,202 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useRef, useState } from "react";
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  ActivityIndicator,
+  Platform,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
+import * as Notifications from "expo-notifications";
+import * as Device from "expo-device";
+import Constants from "expo-constants";
 import Flecha from "../components/HeaderFlecha";
 
-type TipoNotificacao =
-  | "servico"
-  | "mensagem"
-  | "favorito"
-  | "trocas"
-  | "sistema";
+const API_URL = "http://192.168.137.70:3000"; // troque pela URL da sua API
+
+// Faz o push aparecer como banner mesmo com o app aberto
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowBanner: true, // mostra o banner com o app aberto
+    shouldShowList: true, // mostra na lista/central de notificações
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+  }),
+});
+
+type Solicitacao = {
+  id: number;
+  status: "pendente" | "aceita" | "recusada";
+  anuncio: { id: number; titulo: string };
+  solicitante: { id: number; nome: string };
+};
 
 type Notificacao = {
-  id: string;
-  tipo: TipoNotificacao;
-  titulo: string;
-  descricao: string;
-  data: string; // rótulo já formatado, ex: "Agora", "2h atrás", "Ontem"
+  id: number;
+  tipo: "nova_solicitacao" | "info";
+  mensagem: string;
   lida: boolean;
+  criadoEm: string;
+  solicitacao?: Solicitacao | null;
 };
 
-// Configuração visual por tipo de notificação (ícone + cor), mantendo a
-// mesma paleta usada na Home (#00AFFF, #9B4DFF, #00FF44, #FF3B6F...)
-const CONFIG_TIPO: Record<
-  TipoNotificacao,
-  { icone: keyof typeof Ionicons.glyphMap; cor: string }
-> = {
-  servico: { icone: "briefcase-outline", cor: "#00AFFF" },
-  mensagem: { icone: "chatbubble-outline", cor: "#9B4DFF" },
-  favorito: { icone: "heart", cor: "#FF3B6F" },
-  trocas: { icone: "cash-outline", cor: "#00FF44" },
-  sistema: { icone: "notifications-outline", cor: "#FFB800" },
+// Ícone/cor por tipo, mantendo a paleta usada no resto do app
+const CONFIG_TIPO: Record<string, { icone: keyof typeof Ionicons.glyphMap; cor: string }> = {
+  nova_solicitacao: { icone: "briefcase-outline", cor: "#00AFFF" },
+  info: { icone: "notifications-outline", cor: "#FFB800" },
 };
 
-const NOTIFICACOES_MOCK: Notificacao[] = [
-  {
-    id: "1",
-    tipo: "servico",
-    titulo: "Proposta aceita",
-    descricao: "Sua proposta para 'Criação de Sites' foi aceita pelo cliente.",
-    data: "Agora",
-    lida: false,
-  },
-  {
-    id: "2",
-    tipo: "mensagem",
-    titulo: "Nova mensagem",
-    descricao: "Ana enviou uma mensagem sobre o serviço de Desenvolvimento Web.",
-    data: "12 min atrás",
-    lida: false,
-  },
-  {
-    id: "3",
-    tipo: "trocas",
-    titulo: "Pagamento recebido",
-    descricao: "Você recebeu R$ 100,00 pelo serviço 'Criação de Logo'.",
-    data: "2h atrás",
-    lida: false,
-  },
-  {
-    id: "4",
-    tipo: "favorito",
-    titulo: "Novo favorito",
-    descricao: "Carlos adicionou seu perfil aos favoritos dele.",
-    data: "Ontem",
-    lida: true,
-  },
-  {
-    id: "5",
-    tipo: "sistema",
-    titulo: "Atualize seu perfil",
-    descricao: "Complete seu perfil para aparecer mais nas buscas.",
-    data: "Ontem",
-    lida: true,
-  },
-  {
-    id: "6",
-    tipo: "servico",
-    titulo: "Serviço concluído",
-    descricao: "'Aulas de Física' foi marcado como concluído.",
-    data: "2 dias atrás",
-    lida: true,
-  },
-];
+function formatarData(iso: string) {
+  const data = new Date(iso);
+  const agora = new Date();
+  const diffMin = Math.floor((agora.getTime() - data.getTime()) / 60000);
+
+  if (diffMin < 1) return "Agora";
+  if (diffMin < 60) return `${diffMin} min atrás`;
+  if (diffMin < 24 * 60) return `${Math.floor(diffMin / 60)}h atrás`;
+  if (diffMin < 48 * 60) return "Ontem";
+  return data.toLocaleDateString("pt-BR");
+}
 
 export default function Notificacoes() {
   const router = useRouter();
-  const [notificacoes, setNotificacoes] = useState<Notificacao[]>(
-    NOTIFICACOES_MOCK
+  const [notificacoes, setNotificacoes] = useState<Notificacao[]>([]);
+  const [carregando, setCarregando] = useState(true);
+  const [respondendoId, setRespondendoId] = useState<number | null>(null);
+  const registrouPush = useRef(false);
+
+  async function buscarNotificacoes() {
+    try {
+      const token = await AsyncStorage.getItem("token");
+      const resposta = await fetch(`${API_URL}/notificacoes`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const dados = await resposta.json();
+      setNotificacoes(dados.notificacoes ?? []);
+    } catch (erro) {
+      console.error("Erro ao buscar notificações:", erro);
+    } finally {
+      setCarregando(false);
+    }
+  }
+
+  // Pede permissão, pega o Expo Push Token e manda salvar no back-end.
+  // Só faz isso uma vez por sessão da tela.
+  async function registrarPushToken() {
+    if (registrouPush.current || !Device.isDevice) return;
+    registrouPush.current = true;
+
+    const { status: statusAtual } = await Notifications.getPermissionsAsync();
+    let statusFinal = statusAtual;
+
+    if (statusAtual !== "granted") {
+      const { status } = await Notifications.requestPermissionsAsync();
+      statusFinal = status;
+    }
+
+    if (statusFinal !== "granted") return; // usuário negou, segue sem push
+
+    const projectId =
+      Constants.expoConfig?.extra?.eas?.projectId ?? Constants.easConfig?.projectId;
+
+    if (!projectId) {
+      console.error("projectId não encontrado. Veja o app.json/eas.json do projeto.");
+      return;
+    }
+
+    const { data: expoPushToken } = await Notifications.getExpoPushTokenAsync({ projectId });
+    const token = await AsyncStorage.getItem("token");
+
+    await fetch(`${API_URL}/notificacoes/push-token`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ expoPushToken }),
+    });
+
+    if (Platform.OS === "android") {
+      Notifications.setNotificationChannelAsync("default", {
+        name: "default",
+        importance: Notifications.AndroidImportance.MAX,
+      });
+    }
+  }
+
+  useFocusEffect(
+    useCallback(() => {
+      buscarNotificacoes();
+      registrarPushToken();
+
+      // Recarrega a lista quando chega um push com o app aberto
+      const subscription = Notifications.addNotificationReceivedListener(() => {
+        buscarNotificacoes();
+      });
+
+      return () => subscription.remove();
+    }, [])
   );
 
   const naoLidas = notificacoes.filter((n) => !n.lida).length;
 
-  const hoje = notificacoes.filter((n) =>
-    ["Agora", "12 min atrás", "2h atrás"].includes(n.data)
-  );
-  const anteriores = notificacoes.filter((n) => !hoje.includes(n));
+  async function responder(solicitacaoId: number, resposta: "aceitar" | "recusar") {
+    setRespondendoId(solicitacaoId);
+    try {
+      const token = await AsyncStorage.getItem("token");
+      const resp = await fetch(`${API_URL}/notificacoes/${solicitacaoId}/responder`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ resposta }),
+      });
 
-  function marcarComoLida(id: string) {
-    setNotificacoes((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, lida: true } : n))
-    );
-  }
+      if (!resp.ok) {
+        const erro = await resp.json();
+        console.error(erro.erro);
+        return;
+      }
 
-  function marcarTodasComoLidas() {
-    setNotificacoes((prev) => prev.map((n) => ({ ...n, lida: true })));
-  }
+      // Atualiza local sem precisar buscar tudo de novo
+      setNotificacoes((prev) =>
+        prev.map((n) =>
+          n.solicitacao?.id === solicitacaoId
+            ? {
+                ...n,
+                lida: true,
+                solicitacao: {
+                  ...n.solicitacao!,
+                  status: resposta === "aceitar" ? "aceita" : "recusada",
+                },
+              }
+            : n
+        )
+      );
 
-  function removerNotificacao(id: string) {
-    setNotificacoes((prev) => prev.filter((n) => n.id !== id));
-  }
-
-  function aoTocarNotificacao(notificacao: Notificacao) {
-    if (!notificacao.lida) marcarComoLida(notificacao.id);
-
-    switch (notificacao.tipo) {
-      case "mensagem":
-        router.push("/Chat");
-        break;
-      case "servico":
-        router.push("/verAnuncio");
-        break;
-      case "favorito":
-        router.push("/perfil");
-        break;
-      default:
-        break;
+      if (resposta === "aceitar") {
+        router.push("/FuncoesAnuncios/ServicoAtivo");
+      }
+    } catch (erro) {
+      console.error("Erro ao responder solicitação:", erro);
+    } finally {
+      setRespondendoId(null);
     }
   }
 
   function renderNotificacao(item: Notificacao) {
-    const { icone, cor } = CONFIG_TIPO[item.tipo];
+    const { icone, cor } = CONFIG_TIPO[item.tipo] ?? CONFIG_TIPO.info;
+    const solicitacaoPendente =
+      item.tipo === "nova_solicitacao" && item.solicitacao?.status === "pendente";
 
     return (
-      <TouchableOpacity
-        key={item.id}
-        style={[styles.card, !item.lida && styles.cardNaoLida]}
-        activeOpacity={0.7}
-        onPress={() => aoTocarNotificacao(item)}
-      >
+      <View key={item.id} style={[styles.card, !item.lida && styles.cardNaoLida]}>
         <View style={[styles.iconWrapper, { backgroundColor: `${cor}22` }]}>
           <Ionicons name={icone} size={22} color={cor} />
         </View>
@@ -154,24 +204,47 @@ export default function Notificacoes() {
         <View style={styles.cardTexto}>
           <View style={styles.cardTopo}>
             <Text style={styles.cardTitulo} numberOfLines={1}>
-              {item.titulo}
+              {item.tipo === "nova_solicitacao" ? "Nova solicitação de serviço" : "Notificação"}
             </Text>
             {!item.lida && <View style={styles.dot} />}
           </View>
           <Text style={styles.cardDescricao} numberOfLines={2}>
-            {item.descricao}
+            {item.mensagem}
           </Text>
-          <Text style={styles.cardData}>{item.data}</Text>
-        </View>
+          <Text style={styles.cardData}>{formatarData(item.criadoEm)}</Text>
 
-        <TouchableOpacity
-          style={styles.removerButton}
-          onPress={() => removerNotificacao(item.id)}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        >
-          <Ionicons name="close" size={18} color="#555" />
-        </TouchableOpacity>
-      </TouchableOpacity>
+          {solicitacaoPendente && (
+            <View style={styles.acoesWrapper}>
+              <TouchableOpacity
+                style={[styles.botaoAcao, styles.botaoAceitar]}
+                disabled={respondendoId === item.solicitacao!.id}
+                onPress={() => responder(item.solicitacao!.id, "aceitar")}
+              >
+                {respondendoId === item.solicitacao!.id ? (
+                  <ActivityIndicator size="small" color="#0B0B0B" />
+                ) : (
+                  <Text style={styles.botaoAceitarTexto}>Aceitar</Text>
+                )}
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.botaoAcao, styles.botaoRecusar]}
+                disabled={respondendoId === item.solicitacao!.id}
+                onPress={() => responder(item.solicitacao!.id, "recusar")}
+              >
+                <Text style={styles.botaoRecusarTexto}>Recusar</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {item.tipo === "nova_solicitacao" && item.solicitacao?.status === "aceita" && (
+            <Text style={styles.statusAceito}>Aceita</Text>
+          )}
+          {item.tipo === "nova_solicitacao" && item.solicitacao?.status === "recusada" && (
+            <Text style={styles.statusRecusado}>Recusada</Text>
+          )}
+        </View>
+      </View>
     );
   }
 
@@ -179,7 +252,7 @@ export default function Notificacoes() {
     <View style={styles.container}>
       {/* CABEÇALHO */}
       <View style={styles.header}>
-       <Flecha></Flecha>
+        <Flecha></Flecha>
 
         <View style={styles.headerTextWrapper}>
           <Text style={styles.headerTitulo}>Notificações</Text>
@@ -189,27 +262,15 @@ export default function Notificacoes() {
             </Text>
           )}
         </View>
-
-        <TouchableOpacity
-          onPress={marcarTodasComoLidas}
-          disabled={naoLidas === 0}
-        >
-          <Text
-            style={[
-              styles.marcarTodas,
-              naoLidas === 0 && styles.marcarTodasDesativado,
-            ]}
-          >
-            Marcar todas
-          </Text>
-        </TouchableOpacity>
       </View>
 
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {notificacoes.length === 0 ? (
+        {carregando ? (
+          <ActivityIndicator style={{ marginTop: 60 }} color="#00AFFF" />
+        ) : notificacoes.length === 0 ? (
           <View style={styles.emptyState}>
             <Ionicons name="notifications-off-outline" size={40} color="#444" />
             <Text style={styles.emptyTitulo}>Nenhuma notificação</Text>
@@ -218,21 +279,7 @@ export default function Notificacoes() {
             </Text>
           </View>
         ) : (
-          <>
-            {hoje.length > 0 && (
-              <>
-                <Text style={styles.sectionLabel}>Hoje</Text>
-                {hoje.map(renderNotificacao)}
-              </>
-            )}
-
-            {anteriores.length > 0 && (
-              <>
-                <Text style={styles.sectionLabel}>Anteriores</Text>
-                {anteriores.map(renderNotificacao)}
-              </>
-            )}
-          </>
+          notificacoes.map(renderNotificacao)
         )}
 
         <View style={{ height: 40 }} />
@@ -253,14 +300,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 20,
   },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 1,
-  },
   headerTextWrapper: {
     flex: 1,
     marginLeft: 14,
@@ -275,25 +314,8 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginTop: 2,
   },
-  marcarTodas: {
-    color: "#00AFFF",
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  marcarTodasDesativado: {
-    color: "#444",
-  },
   scrollContent: {
     paddingHorizontal: 20,
-  },
-  sectionLabel: {
-    color: "#888",
-    fontSize: 13,
-    fontWeight: "600",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-    marginTop: 20,
-    marginBottom: 12,
   },
   card: {
     flexDirection: "row",
@@ -347,9 +369,48 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 8,
   },
-  removerButton: {
-    padding: 4,
-    marginLeft: 8,
+  acoesWrapper: {
+    flexDirection: "row",
+    marginTop: 12,
+    gap: 10,
+  },
+  botaoAcao: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    minWidth: 90,
+  },
+  botaoAceitar: {
+    backgroundColor: "#00AFFF",
+  },
+  botaoAceitarTexto: {
+    color: "#0B0B0B",
+    fontWeight: "700",
+    fontSize: 13,
+  },
+  botaoRecusar: {
+    backgroundColor: "transparent",
+    borderWidth: 1,
+    borderColor: "#FF3B6F",
+  },
+  botaoRecusarTexto: {
+    color: "#FF3B6F",
+    fontWeight: "700",
+    fontSize: 13,
+  },
+  statusAceito: {
+    marginTop: 10,
+    color: "#00FF44",
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  statusRecusado: {
+    marginTop: 10,
+    color: "#FF3B6F",
+    fontSize: 13,
+    fontWeight: "600",
   },
   emptyState: {
     alignItems: "center",

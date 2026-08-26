@@ -16,7 +16,7 @@ import Header from "../components/HeaderEscolha";
 import { router } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 
-const API_URL = "http://172.30.1.41:3000";
+const API_URL = "http://192.168.137.70:3000";
 
 type Anuncio = {
   id: number;

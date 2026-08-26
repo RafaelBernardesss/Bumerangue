@@ -8,6 +8,7 @@ import rotaAdmin from "./routes/rota-admin.js";
 import rotaUsuario from "./routes/rota-usuario.js"
 import rotaAnuncio from "./routes/rota-Anuncio.js";
 import rotaCategoria from "./routes/rota-Categoria.js";
+import rotaNotificacao from "./routes/rota-notificacao.js";
 import path from "path";
 
 const app = express();
@@ -21,6 +22,7 @@ app.use("/usuarios", rotaAdmin);
 app.use("/usuarios", rotaUsuario);
 app.use("/anuncios", rotaAnuncio);
 app.use("/categorias", rotaCategoria);
+app.use("/notificacoes", rotaNotificacao);
 app.use("/uploads", express.static(path.resolve("uploads")));
 
 export default app;
