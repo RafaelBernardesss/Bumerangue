@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -7,79 +7,39 @@ import {
   ScrollView,
   StyleSheet,
   Alert,
+  Image,
+  ActivityIndicator,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import Header from "../components/HeaderEscolha";
 
- 
+const API_URL = "http://192.168.137.70:3000";
+
 type Anuncio = {
-  id: string;
-  nome: string;
-  verificado: boolean;
-  servico: string;
+  id: number;
+  titulo: string;
   descricao: string;
-  avaliacoes: number;
-  entrega: string;
-  local: string;
   preferencia: string;
-  categoria: string;
+  foto: string | null;
+  disponibilidade: string | null;
+  status: "ativo" | "vendido" | "pausado";
+  cidade: string | null;
+  estado: string | null;
+  criadoEm: string;
+  atualizadoEm: string;
+  usuarioId: number;
+  categoriaId: number;
+  usuario: { id: number; nome: string; foto: string | null };
+  categoria: { id: number; nome: string };
 };
 
-const ANUNCIOS: Anuncio[] = [
-  {
-    id: "1",
-    nome: "João Silva",
-    verificado: true,
-    servico: "Criação de Sites Profissionais",
-    descricao:
-      "Desenvolvo sites institucionais e landing pages responsivas, com foco em performance e design moderno.",
-    avaliacoes: 32,
-    entrega: "2 dias",
-    local: "São Paulo - SP",
-    preferencia: "Jardineiro",
-    categoria: "Programação",
-  },
-  {
-    id: "2",
-    nome: "Maria Oliveira",
-    verificado: true,
-    servico: "Design de Logotipo e Identidade Visual",
-    descricao:
-      "Crio identidades visuais completas: logotipo, paleta de cores, tipografia e manual de marca.",
-    avaliacoes: 58,
-    entrega: "3 dias",
-    local: "Rio de Janeiro - RJ",
-    preferencia: "Programador",
-    categoria: "Design",
-  },
-  {
-    id: "3",
-    nome: "Carlos Souza",
-    verificado: false,
-    servico: "Desenvolvimento de App React Native",
-    descricao:
-      "Desenvolvo aplicativos mobile multiplataforma com React Native e integração com APIs.",
-    avaliacoes: 12,
-    entrega: "7 dias",
-    local: "Curitiba - PR",
-   preferencia: "Pedreiro",
-    categoria: "Programação",
-  },
-  {
-    id: "4",
-    nome: "Ana Costa",
-    verificado: true,
-    servico: "Edição de Vídeos para Redes Sociais",
-    descricao:
-      "Edição dinâmica de vídeos para Reels, TikTok e Shorts, com cortes, legendas e efeitos.",
-    avaliacoes: 45,
-    entrega: "1 dia",
-    local: "Belo Horizonte - MG",
-    preferencia: "Mecanico",
-    categoria: "Vídeo",
-  },
-];
+// Monta a URL completa da foto a partir do caminho relativo salvo no banco
+function urlFoto(caminho: string | null) {
+  if (!caminho) return null;
+  return `${API_URL}/${caminho.replace(/\\/g, "/")}`;
+}
 
 // Mock dos serviços do próprio usuário logado, que podem ser oferecidos em troca.
 // TODO: substituir por dados reais vindos da API/perfil do usuário.
@@ -93,12 +53,75 @@ export default function DetalheAnuncio() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
 
-  const anuncio = ANUNCIOS.find((a) => a.id === id);
+  const [anuncio, setAnuncio] = useState<Anuncio | null>(null);
+  const [carregando, setCarregando] = useState(true);
+  const [erro, setErro] = useState(false);
 
   const [servicoEscolhido, setServicoEscolhido] = useState<string | null>(null);
   const [mensagem, setMensagem] = useState("");
 
-  if (!anuncio) {
+  useFocusEffect(
+    useCallback(() => {
+      async function buscarAnuncio() {
+        if (!id) return;
+        try {
+          setCarregando(true);
+          setErro(false);
+
+          const resposta = await fetch(`${API_URL}/anuncios/${id}`);
+          const dados = await resposta.json();
+
+          if (resposta.ok) {
+            setAnuncio(dados.anuncio);
+          } else {
+            console.log(dados.erro);
+            setErro(true);
+          }
+        } catch (e) {
+          console.log(e);
+          setErro(true);
+        } finally {
+          setCarregando(false);
+        }
+      }
+
+      buscarAnuncio();
+    }, [id])
+  );
+
+  function enviarProposta() {
+    if (!servicoEscolhido) {
+      Alert.alert("Escolha um serviço", "Selecione qual serviço você quer oferecer em troca.");
+      return;
+    }
+    if (!anuncio) return;
+
+    const nomeServico = MEUS_SERVICOS.find((s) => s.id === servicoEscolhido)?.nome;
+
+    Alert.alert(
+      "Proposta enviada",
+      `Você propôs trocar "${nomeServico}" pelo serviço "${anuncio.titulo}" de ${anuncio.usuario.nome}.`,
+      [{ text: "OK", onPress: () => router.back() }]
+    );
+  }
+
+  // Estado de carregamento
+  if (carregando) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Header></Header>
+        </View>
+        <View style={styles.vazioContainer}>
+          <ActivityIndicator color="#27A7FF" size="large" />
+          <Text style={styles.vazioTexto}>Carregando anúncio...</Text>
+        </View>
+      </View>
+    );
+  }
+
+  // Estado de erro ou anúncio não encontrado
+  if (erro || !anuncio) {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
@@ -113,26 +136,10 @@ export default function DetalheAnuncio() {
         </View>
       </View>
     );
-
   }
-  
-  const anuncios = anuncio;
 
-
-  function enviarProposta() {
-    if (!servicoEscolhido) {
-      Alert.alert("Escolha um serviço", "Selecione qual serviço você quer oferecer em troca.");
-      return;
-    }
-
-    const nomeServico = MEUS_SERVICOS.find((s) => s.id === servicoEscolhido)?.nome;
-
-    Alert.alert(
-      "Proposta enviada",
-      `Você propôs trocar "${nomeServico}" pelo serviço "${anuncios.servico}" de ${anuncios.nome}.`,
-      [{ text: "OK", onPress: () => router.back() }]
-    );
-  }
+  const fotoAnuncio = urlFoto(anuncio.foto);
+  const fotoUsuario = urlFoto(anuncio.usuario.foto);
 
   return (
     <View style={styles.container}>
@@ -141,37 +148,50 @@ export default function DetalheAnuncio() {
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 60 }}>
+        {/* Foto do anúncio */}
+        {fotoAnuncio && (
+          <Image source={{ uri: fotoAnuncio }} style={styles.imagemAnuncio} />
+        )}
 
         {/* Card do anunciante */}
         <View style={styles.card}>
-          <View style={styles.avatar} />
+          {fotoUsuario ? (
+            <Image source={{ uri: fotoUsuario }} style={styles.avatar} />
+          ) : (
+            <View style={styles.avatar} />
+          )}
           <View style={{ flex: 1 }}>
-            <Text style={styles.userName}>
-              {anuncio.nome} {anuncio.verificado && "✓"}
-            </Text>
-            <Text style={styles.rating}>★★★★★ ({anuncio.avaliacoes} avaliações)</Text>
-            <Text style={styles.info}>{anuncio.local}</Text>
+            <Text style={styles.userName}>{anuncio.usuario.nome}</Text>
+            {(anuncio.cidade || anuncio.estado) && (
+              <Text style={styles.info}>
+                {anuncio.cidade}
+                {anuncio.cidade && anuncio.estado ? " - " : ""}
+                {anuncio.estado}
+              </Text>
+            )}
           </View>
         </View>
 
         {/* Detalhes do serviço */}
-        <Text style={styles.servicoTitulo}>{anuncio.servico}</Text>
+        <Text style={styles.servicoTitulo}>{anuncio.titulo}</Text>
 
         <View style={styles.tagsLinha}>
           <View style={styles.tagInfo}>
             <Ionicons name="pricetag-outline" size={14} color="#27A7FF" />
-            <Text style={styles.tagInfoTexto}>{anuncio.categoria}</Text>
+            <Text style={styles.tagInfoTexto}>{anuncio.categoria.nome}</Text>
           </View>
-          <View style={styles.tagInfo}>
-            <Ionicons name="time-outline" size={14} color="#27A7FF" />
-            <Text style={styles.tagInfoTexto}>Entrega em {anuncio.entrega}</Text>
-          </View>
+          {anuncio.disponibilidade && (
+            <View style={styles.tagInfo}>
+              <Ionicons name="time-outline" size={14} color="#27A7FF" />
+              <Text style={styles.tagInfoTexto}>{anuncio.disponibilidade}</Text>
+            </View>
+          )}
         </View>
 
         <Text style={styles.descricao}>{anuncio.descricao}</Text>
 
         <View style={styles.priceBox}>
-          <Text style={styles.priceLabel}>Preferencia de Troca</Text>
+          <Text style={styles.priceLabel}>Preferência de Troca</Text>
           <Text style={styles.price}>{anuncio.preferencia}</Text>
         </View>
 
@@ -237,16 +257,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 
-  backButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
+  imagemAnuncio: {
+    width: "100%",
+    height: 200,
+    borderRadius: 16,
     marginBottom: 20,
-  },
-
-  backButtonText: {
-    color: "#fff",
-    fontSize: 16,
+    backgroundColor: "#161D2E",
   },
 
   card: {
@@ -272,11 +288,6 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 17,
     fontWeight: "bold",
-  },
-
-  rating: {
-    color: "#FFD700",
-    marginTop: 5,
   },
 
   info: {

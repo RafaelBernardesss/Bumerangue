@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Platform,
+  LogBox,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
@@ -17,7 +18,15 @@ import * as Device from "expo-device";
 import Constants from "expo-constants";
 import Flecha from "../components/HeaderFlecha";
 
-const API_URL = "http://192.168.137.70:3000"; // troque pela URL da sua API
+LogBox.ignoreLogs([
+  "expo-notifications: Android Push notifications",
+]);
+
+const API_URL = "http://192.168.137.70:3000";
+
+const isExpoGo = Constants.executionEnvironment === "storeClient";
+
+// ...resto do arquivo continua igual
 
 // Faz o push aparecer como banner mesmo com o app aberto
 Notifications.setNotificationHandler({
@@ -89,6 +98,15 @@ export default function Notificacoes() {
   // Só faz isso uma vez por sessão da tela.
   async function registrarPushToken() {
     if (registrouPush.current || !Device.isDevice) return;
+
+    // Push remoto não funciona no Expo Go a partir do SDK 53 — só em development build
+    if (isExpoGo) {
+      console.log(
+        "Push notifications não disponíveis no Expo Go (SDK 53+). Use um development build."
+      );
+      return;
+    }
+
     registrouPush.current = true;
 
     const { status: statusAtual } = await Notifications.getPermissionsAsync();

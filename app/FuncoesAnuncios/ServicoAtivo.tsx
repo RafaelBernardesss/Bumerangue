@@ -1,154 +1,197 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  Image,
+  ActivityIndicator,
+  Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
+import { useFocusEffect } from "@react-navigation/native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
 import Flecha from "../../components/HeaderFlecha";
 
-type StatusServico = "andamento" | "aguardando" | "revisao" | "concluido";
+const API_URL = "http://192.168.137.70:3000";
 
-type ServicoAtivo = {
-  id: string;
+type Anuncio = {
+  id: number;
   titulo: string;
-  cliente: string;
-  status: StatusServico;
-  valor: string;
-  prazo: string; // rótulo já formatado, ex: "Entrega em 3 dias"
-  progresso: number; // 0 a 100
+  descricao: string;
+  preferencia: string;
+  foto: string | null;
+  disponibilidade: string | null;
+  status: "ativo" | "vendido" | "pausado";
+  cidade: string | null;
+  estado: string | null;
+  criadoEm: string;
+  atualizadoEm: string;
+  usuarioId: number;
+  categoriaId: number;
+  usuario: { id: number; nome: string; foto: string | null };
+  categoria: { id: number; nome: string };
 };
 
-// Configuração visual por status, mantendo a mesma paleta usada na Home
-// e na tela de Notificações (#00AFFF, #9B4DFF, #00FF44, #FF3B6F, #FFB800)
-const CONFIG_STATUS: Record<
-  StatusServico,
-  { label: string; cor: string; icone: keyof typeof Ionicons.glyphMap }
-> = {
-  andamento: { label: "Em andamento", cor: "#00AFFF", icone: "sync-outline" },
-  aguardando: {
-    label: "Aguardando cliente",
-    cor: "#FFB800",
-    icone: "time-outline",
-  },
-  revisao: {
-    label: "Em revisão",
-    cor: "#9B4DFF",
-    icone: "create-outline",
-  },
-  concluido: {
-    label: "Concluído",
-    cor: "#00FF44",
-    icone: "checkmark-circle-outline",
-  },
+// Monta a URL completa da foto a partir do caminho relativo salvo no banco
+function urlFoto(caminho: string | null) {
+  if (!caminho) return null;
+  return `${API_URL}/${caminho.replace(/\\/g, "/")}`;
+}
+
+// Rótulo e cor do status, mantendo a mesma paleta usada no resto do app
+const CONFIG_STATUS: Record<Anuncio["status"], { label: string; cor: string }> = {
+  ativo: { label: "ATIVO", cor: "#00AFFF" },
+  pausado: { label: "PAUSADO", cor: "#FFB800" },
+  vendido: { label: "TROCADO", cor: "#00FF44" },
 };
 
-const SERVICOS_MOCK: ServicoAtivo[] = [
-  {
-    id: "1",
-    titulo: "Criação de Sites",
-    cliente: "Ana Beatriz",
-    status: "andamento",
-    valor: "R$ 850,00",
-    prazo: "Entrega em 3 dias",
-    progresso: 65,
-  },
-  {
-    id: "2",
-    titulo: "Desenvolvimento Web",
-    cliente: "Carlos Eduardo",
-    status: "aguardando",
-    valor: "R$ 1.200,00",
-    prazo: "Aguardando aprovação",
-    progresso: 40,
-  },
-  {
-    id: "3",
-    titulo: "Criação de Logo",
-    cliente: "Mariana Silva",
-    status: "revisao",
-    valor: "R$ 100,00",
-    prazo: "Revisão solicitada",
-    progresso: 85,
-  },
-  {
-    id: "4",
-    titulo: "Aulas de Física",
-    cliente: "João Pedro",
-    status: "andamento",
-    valor: "R$ 60,00",
-    prazo: "Próxima aula: amanhã",
-    progresso: 50,
-  },
-  {
-    id: "5",
-    titulo: "Edição de Vídeo",
-    cliente: "Fernanda Costa",
-    status: "concluido",
-    valor: "R$ 300,00",
-    prazo: "Concluído hoje",
-    progresso: 100,
-  },
-];
+function formatarData(iso: string) {
+  const data = new Date(iso);
+  return data.toLocaleDateString("pt-BR");
+}
 
 export default function ServicosAtivos() {
   const router = useRouter();
-  const [servicos] = useState<ServicoAtivo[]>(SERVICOS_MOCK);
+  const [anuncios, setAnuncios] = useState<Anuncio[]>([]);
+  const [carregando, setCarregando] = useState(true);
+  const [excluindoId, setExcluindoId] = useState<number | null>(null);
 
-  const emAndamento = servicos.filter((s) => s.status !== "concluido");
-  const concluidos = servicos.filter((s) => s.status === "concluido");
+  async function buscarMeusAnuncios() {
+    try {
+      setCarregando(true);
+      const id = await AsyncStorage.getItem("usuarioId");
+      if (!id) return;
 
-  function aoTocarServico(servico: ServicoAtivo) {
-    router.push("/verAnuncio");
+      const resposta = await fetch(`${API_URL}/anuncios?usuarioId=${id}`);
+      const dados = await resposta.json();
+
+      if (resposta.ok) {
+        setAnuncios(dados.anuncios || []);
+      } else {
+        console.log(dados.erro);
+      }
+    } catch (erro) {
+      console.log(erro);
+    } finally {
+      setCarregando(false);
+    }
   }
 
-  function renderServico(item: ServicoAtivo) {
-    const { label, cor, icone } = CONFIG_STATUS[item.status];
+  useFocusEffect(
+    useCallback(() => {
+      buscarMeusAnuncios();
+    }, [])
+  );
+
+  function editarAnuncio(item: Anuncio) {
+    router.push(`/EditarAnuncios?id=${item.id}`);
+  }
+
+  function confirmarExclusao(item: Anuncio) {
+    Alert.alert(
+      "Excluir anúncio",
+      `Tem certeza que deseja excluir "${item.titulo}"? Essa ação não pode ser desfeita.`,
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Excluir",
+          style: "destructive",
+          onPress: () => excluirAnuncio(item.id),
+        },
+      ]
+    );
+  }
+
+  async function excluirAnuncio(id: number) {
+    setExcluindoId(id);
+    try {
+      const token = await AsyncStorage.getItem("token");
+      const resposta = await fetch(`${API_URL}/anuncios/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!resposta.ok) {
+        const dados = await resposta.json();
+        Alert.alert("Erro", dados.erro || "Não foi possível excluir o anúncio.");
+        return;
+      }
+
+      // Remove localmente sem precisar buscar tudo de novo
+      setAnuncios((prev) => prev.filter((a) => a.id !== id));
+    } catch (erro) {
+      console.log(erro);
+      Alert.alert("Erro", "Não foi possível excluir o anúncio. Tente novamente.");
+    } finally {
+      setExcluindoId(null);
+    }
+  }
+
+  function renderAnuncio(item: Anuncio) {
+    const { label, cor } = CONFIG_STATUS[item.status];
+    const foto = urlFoto(item.foto);
+    const excluindo = excluindoId === item.id;
 
     return (
       <TouchableOpacity
         key={item.id}
         style={styles.card}
         activeOpacity={0.7}
-        onPress={() => aoTocarServico(item)}
+        onPress={() => router.push(`/AnuncioScreen?id=${item.id}`)}
       >
         <View style={styles.cardTopo}>
-          <View style={[styles.iconWrapper, { backgroundColor: `${cor}22` }]}>
-            <Ionicons name={icone} size={22} color={cor} />
-          </View>
+          {foto ? (
+            <Image source={{ uri: foto }} style={styles.iconWrapper} />
+          ) : (
+            <View style={[styles.iconWrapper, { backgroundColor: "#161D2E" }]}>
+              <Ionicons name="image-outline" size={22} color="#444" />
+            </View>
+          )}
 
           <View style={styles.cardTexto}>
             <Text style={styles.cardTitulo} numberOfLines={1}>
               {item.titulo}
             </Text>
             <Text style={styles.cardCliente} numberOfLines={1}>
-              {item.cliente}
+              {item.categoria.nome}
             </Text>
           </View>
-
-          <Text style={styles.cardValor}>{item.valor}</Text>
-        </View>
-
-        <View style={styles.progressoWrapper}>
-          <View style={styles.progressoTrilha}>
-            <View
-              style={[
-                styles.progressoPreenchido,
-                { width: `${item.progresso}%`, backgroundColor: cor },
-              ]}
-            />
-          </View>
-          <Text style={styles.progressoTexto}>{item.progresso}%</Text>
         </View>
 
         <View style={styles.cardRodape}>
           <View style={[styles.badge, { backgroundColor: `${cor}22` }]}>
             <Text style={[styles.badgeTexto, { color: cor }]}>{label}</Text>
           </View>
-          <Text style={styles.cardPrazo}>{item.prazo}</Text>
+          <Text style={styles.cardPrazo}>Criado em {formatarData(item.criadoEm)}</Text>
+        </View>
+
+        <View style={styles.acoesWrapper}>
+          <TouchableOpacity
+            style={[styles.botaoAcao, styles.botaoEditar]}
+            onPress={() => editarAnuncio(item)}
+            disabled={excluindo}
+          >
+            <Ionicons name="create-outline" size={16} color="#00AFFF" />
+            <Text style={styles.botaoEditarTexto}>Editar</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.botaoAcao, styles.botaoExcluir]}
+            onPress={() => confirmarExclusao(item)}
+            disabled={excluindo}
+          >
+            {excluindo ? (
+              <ActivityIndicator size="small" color="#FF3B6F" />
+            ) : (
+              <>
+                <Ionicons name="trash-outline" size={16} color="#FF3B6F" />
+                <Text style={styles.botaoExcluirTexto}>Excluir</Text>
+              </>
+            )}
+          </TouchableOpacity>
         </View>
       </TouchableOpacity>
     );
@@ -161,10 +204,10 @@ export default function ServicosAtivos() {
         <Flecha></Flecha>
 
         <View style={styles.headerTextWrapper}>
-          <Text style={styles.headerTitulo}>Serviços Ativos</Text>
-          {emAndamento.length > 0 && (
+          <Text style={styles.headerTitulo}>Meus Anúncios</Text>
+          {anuncios.length > 0 && (
             <Text style={styles.headerSubtitulo}>
-              {emAndamento.length} em andamento
+              {anuncios.length} {anuncios.length === 1 ? "anúncio" : "anúncios"}
             </Text>
           )}
         </View>
@@ -174,30 +217,18 @@ export default function ServicosAtivos() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {servicos.length === 0 ? (
+        {carregando ? (
+          <ActivityIndicator style={{ marginTop: 60 }} color="#00AFFF" />
+        ) : anuncios.length === 0 ? (
           <View style={styles.emptyState}>
             <Ionicons name="briefcase-outline" size={40} color="#444" />
-            <Text style={styles.emptyTitulo}>Nenhum serviço ativo</Text>
+            <Text style={styles.emptyTitulo}>Nenhum anúncio criado</Text>
             <Text style={styles.emptyTexto}>
-              Seus serviços em andamento vão aparecer aqui.
+              Os anúncios que você criar vão aparecer aqui.
             </Text>
           </View>
         ) : (
-          <>
-            {emAndamento.length > 0 && (
-              <>
-                <Text style={styles.sectionLabel}>Em andamento</Text>
-                {emAndamento.map(renderServico)}
-              </>
-            )}
-
-            {concluidos.length > 0 && (
-              <>
-                <Text style={styles.sectionLabel}>Concluídos recentemente</Text>
-                {concluidos.map(renderServico)}
-              </>
-            )}
-          </>
+          anuncios.map(renderAnuncio)
         )}
 
         <View style={{ height: 40 }} />
@@ -235,15 +266,6 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 20,
   },
-  sectionLabel: {
-    color: "#888",
-    fontSize: 13,
-    fontWeight: "600",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-    marginTop: 20,
-    marginBottom: 12,
-  },
   card: {
     backgroundColor: "#0D1324",
     borderRadius: 18,
@@ -259,7 +281,7 @@ const styles = StyleSheet.create({
   iconWrapper: {
     width: 44,
     height: 44,
-    borderRadius: 22,
+    borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12,
@@ -277,40 +299,11 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginTop: 2,
   },
-  cardValor: {
-    color: "#00FF44",
-    fontSize: 14,
-    fontWeight: "700",
-    marginLeft: 8,
-  },
-  progressoWrapper: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 14,
-  },
-  progressoTrilha: {
-    flex: 1,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: "#161D2E",
-    overflow: "hidden",
-  },
-  progressoPreenchido: {
-    height: 6,
-    borderRadius: 3,
-  },
-  progressoTexto: {
-    color: "#666",
-    fontSize: 12,
-    marginLeft: 8,
-    width: 34,
-    textAlign: "right",
-  },
   cardRodape: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginTop: 12,
+    marginTop: 14,
   },
   badge: {
     paddingHorizontal: 10,
@@ -324,6 +317,38 @@ const styles = StyleSheet.create({
   cardPrazo: {
     color: "#555",
     fontSize: 12,
+  },
+  acoesWrapper: {
+    flexDirection: "row",
+    marginTop: 14,
+    gap: 10,
+  },
+  botaoAcao: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 10,
+    borderRadius: 10,
+    gap: 6,
+  },
+  botaoEditar: {
+    backgroundColor: "#00AFFF22",
+  },
+  botaoEditarTexto: {
+    color: "#00AFFF",
+    fontWeight: "700",
+    fontSize: 13,
+  },
+  botaoExcluir: {
+    backgroundColor: "transparent",
+    borderWidth: 1,
+    borderColor: "#FF3B6F",
+  },
+  botaoExcluirTexto: {
+    color: "#FF3B6F",
+    fontWeight: "700",
+    fontSize: 13,
   },
   emptyState: {
     alignItems: "center",
