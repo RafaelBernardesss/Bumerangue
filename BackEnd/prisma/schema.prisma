@@ -35,7 +35,7 @@ model Categoria {
 model Anuncio {
   id                  Int      @id @default(autoincrement())
   titulo              String
-  descricao           String
+  descricao           String?
   preferencia         String
   foto                String?
   disponibilidade     String?

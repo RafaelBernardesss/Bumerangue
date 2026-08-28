@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
 import Header from "../components/HeaderEscolha";
 
@@ -35,7 +36,6 @@ type Anuncio = {
   categoria: { id: number; nome: string };
 };
 
-// Monta a URL completa da foto a partir do caminho relativo salvo no banco
 function urlFoto(caminho: string | null) {
   if (!caminho) return null;
   return `${API_URL}/${caminho.replace(/\\/g, "/")}`;
@@ -59,6 +59,7 @@ export default function DetalheAnuncio() {
 
   const [servicoEscolhido, setServicoEscolhido] = useState<string | null>(null);
   const [mensagem, setMensagem] = useState("");
+  const [enviando, setEnviando] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -89,23 +90,63 @@ export default function DetalheAnuncio() {
     }, [id])
   );
 
-  function enviarProposta() {
+  async function enviarProposta() {
     if (!servicoEscolhido) {
       Alert.alert("Escolha um serviço", "Selecione qual serviço você quer oferecer em troca.");
       return;
     }
     if (!anuncio) return;
 
+    const token = await AsyncStorage.getItem("token");
+    const solicitanteId = await AsyncStorage.getItem("usuarioId");
+
+    if (!token || !solicitanteId) {
+      Alert.alert("Sessão expirada", "Faça login novamente.");
+      router.replace("/login");
+      return;
+    }
+
+    // Não deixa o usuário mandar proposta pro próprio anúncio
+    if (Number(solicitanteId) === anuncio.usuarioId) {
+      Alert.alert("Não permitido", "Você não pode enviar uma proposta para o seu próprio anúncio.");
+      return;
+    }
+
     const nomeServico = MEUS_SERVICOS.find((s) => s.id === servicoEscolhido)?.nome;
 
-    Alert.alert(
-      "Proposta enviada",
-      `Você propôs trocar "${nomeServico}" pelo serviço "${anuncio.titulo}" de ${anuncio.usuario.nome}.`,
-      [{ text: "OK", onPress: () => router.back() }]
-    );
+    try {
+      setEnviando(true);
+
+      const resposta = await fetch(`${API_URL}/anuncios/${anuncio.id}/solicitacoes`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          servicoOferecido: nomeServico,
+          mensagem: mensagem.trim(),
+        }),
+      });
+
+      const dados = await resposta.json();
+
+      if (!resposta.ok) {
+        throw new Error(dados.erro || "Não foi possível enviar a proposta.");
+      }
+
+      Alert.alert(
+        "Proposta enviada",
+        `Você propôs trocar "${nomeServico}" pelo serviço "${anuncio.titulo}" de ${anuncio.usuario.nome}.`,
+        [{ text: "OK", onPress: () => router.back() }]
+      );
+    } catch (erro: any) {
+      Alert.alert("Erro", erro.message || "Não foi possível conectar ao servidor.");
+    } finally {
+      setEnviando(false);
+    }
   }
 
-  // Estado de carregamento
   if (carregando) {
     return (
       <View style={styles.container}>
@@ -120,7 +161,6 @@ export default function DetalheAnuncio() {
     );
   }
 
-  // Estado de erro ou anúncio não encontrado
   if (erro || !anuncio) {
     return (
       <View style={styles.container}>
@@ -148,12 +188,10 @@ export default function DetalheAnuncio() {
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 60 }}>
-        {/* Foto do anúncio */}
         {fotoAnuncio && (
           <Image source={{ uri: fotoAnuncio }} style={styles.imagemAnuncio} />
         )}
 
-        {/* Card do anunciante */}
         <View style={styles.card}>
           {fotoUsuario ? (
             <Image source={{ uri: fotoUsuario }} style={styles.avatar} />
@@ -172,7 +210,6 @@ export default function DetalheAnuncio() {
           </View>
         </View>
 
-        {/* Detalhes do serviço */}
         <Text style={styles.servicoTitulo}>{anuncio.titulo}</Text>
 
         <View style={styles.tagsLinha}>
@@ -195,7 +232,6 @@ export default function DetalheAnuncio() {
           <Text style={styles.price}>{anuncio.preferencia}</Text>
         </View>
 
-        {/* Proposta de troca */}
         <View style={styles.separador} />
 
         <Text style={styles.secaoTitulo}>Propor troca de serviço</Text>
@@ -210,6 +246,7 @@ export default function DetalheAnuncio() {
               key={servico.id}
               style={[styles.opcaoServico, selecionado && styles.opcaoServicoAtiva]}
               onPress={() => setServicoEscolhido(servico.id)}
+              disabled={enviando}
             >
               <Ionicons
                 name={selecionado ? "radio-button-on" : "radio-button-off"}
@@ -232,11 +269,18 @@ export default function DetalheAnuncio() {
           placeholderTextColor="#888"
           value={mensagem}
           onChangeText={setMensagem}
+          editable={!enviando}
         />
 
-        <TouchableOpacity style={styles.button} onPress={enviarProposta}>
-          <Ionicons name="swap-horizontal" size={20} color="#fff" />
-          <Text style={styles.buttonText}>ENVIAR PROPOSTA DE TROCA</Text>
+        <TouchableOpacity style={styles.button} onPress={enviarProposta} disabled={enviando}>
+          {enviando ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <>
+              <Ionicons name="swap-horizontal" size={20} color="#fff" />
+              <Text style={styles.buttonText}>ENVIAR PROPOSTA DE TROCA</Text>
+            </>
+          )}
         </TouchableOpacity>
       </ScrollView>
     </View>
@@ -244,11 +288,7 @@ export default function DetalheAnuncio() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#0B0B0B",
-  },
-
+  container: { flex: 1, backgroundColor: "#0B0B0B" },
   header: {
     marginTop: 40,
     paddingHorizontal: 20,
@@ -256,7 +296,6 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
   },
-
   imagemAnuncio: {
     width: "100%",
     height: 200,
@@ -264,7 +303,6 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     backgroundColor: "#161D2E",
   },
-
   card: {
     backgroundColor: "#0D1626",
     borderWidth: 1,
@@ -275,57 +313,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 20,
   },
-
-  avatar: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: "#333",
-    marginRight: 15,
-  },
-
-  userName: {
-    color: "#fff",
-    fontSize: 17,
-    fontWeight: "bold",
-  },
-
-  info: {
-    color: "#9CA3AF",
-    marginTop: 5,
-  },
-
-  servicoTitulo: {
-    color: "#fff",
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 12,
-  },
-
-  tagsLinha: {
-    flexDirection: "row",
-    gap: 15,
-    marginBottom: 15,
-  },
-
-  tagInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-  },
-
-  tagInfoTexto: {
-    color: "#27A7FF",
-    fontSize: 13,
-  },
-
-  descricao: {
-    color: "#9CA3AF",
-    fontSize: 15,
-    lineHeight: 22,
-    marginBottom: 20,
-  },
-
+  avatar: { width: 60, height: 60, borderRadius: 30, backgroundColor: "#333", marginRight: 15 },
+  userName: { color: "#fff", fontSize: 17, fontWeight: "bold" },
+  info: { color: "#9CA3AF", marginTop: 5 },
+  servicoTitulo: { color: "#fff", fontSize: 24, fontWeight: "bold", marginBottom: 12 },
+  tagsLinha: { flexDirection: "row", gap: 15, marginBottom: 15 },
+  tagInfo: { flexDirection: "row", alignItems: "center", gap: 5 },
+  tagInfoTexto: { color: "#27A7FF", fontSize: 13 },
+  descricao: { color: "#9CA3AF", fontSize: 15, lineHeight: 22, marginBottom: 20 },
   priceBox: {
     backgroundColor: "#0D1626",
     borderWidth: 1,
@@ -334,38 +329,11 @@ const styles = StyleSheet.create({
     padding: 15,
     marginBottom: 10,
   },
-
-  priceLabel: {
-    color: "#9CA3AF",
-    fontSize: 13,
-    marginBottom: 4,
-  },
-
-  price: {
-    color: "#27A7FF",
-    fontSize: 22,
-    fontWeight: "bold",
-  },
-
-  separador: {
-    height: 1,
-    backgroundColor: "#1F3C5E",
-    marginVertical: 25,
-  },
-
-  secaoTitulo: {
-    color: "#fff",
-    fontSize: 20,
-    fontWeight: "bold",
-    marginBottom: 6,
-  },
-
-  secaoSubtitulo: {
-    color: "#9CA3AF",
-    fontSize: 14,
-    marginBottom: 18,
-  },
-
+  priceLabel: { color: "#9CA3AF", fontSize: 13, marginBottom: 4 },
+  price: { color: "#27A7FF", fontSize: 22, fontWeight: "bold" },
+  separador: { height: 1, backgroundColor: "#1F3C5E", marginVertical: 25 },
+  secaoTitulo: { color: "#fff", fontSize: 20, fontWeight: "bold", marginBottom: 6 },
+  secaoSubtitulo: { color: "#9CA3AF", fontSize: 14, marginBottom: 18 },
   opcaoServico: {
     flexDirection: "row",
     alignItems: "center",
@@ -377,28 +345,10 @@ const styles = StyleSheet.create({
     padding: 14,
     marginBottom: 10,
   },
-
-  opcaoServicoAtiva: {
-    borderColor: "#27A7FF",
-  },
-
-  opcaoServicoTexto: {
-    color: "#9CA3AF",
-    fontSize: 15,
-  },
-
-  opcaoServicoTextoAtivo: {
-    color: "#fff",
-    fontWeight: "600",
-  },
-
-  label: {
-    color: "#fff",
-    fontSize: 16,
-    marginBottom: 8,
-    marginTop: 20,
-  },
-
+  opcaoServicoAtiva: { borderColor: "#27A7FF" },
+  opcaoServicoTexto: { color: "#9CA3AF", fontSize: 15 },
+  opcaoServicoTextoAtivo: { color: "#fff", fontWeight: "600" },
+  label: { color: "#fff", fontSize: 16, marginBottom: 8, marginTop: 20 },
   input: {
     backgroundColor: "#0D1626",
     borderWidth: 1,
@@ -407,12 +357,7 @@ const styles = StyleSheet.create({
     padding: 15,
     color: "#fff",
   },
-
-  textArea: {
-    height: 100,
-    textAlignVertical: "top",
-  },
-
+  textArea: { height: 100, textAlignVertical: "top" },
   button: {
     backgroundColor: "#27A7FF",
     borderRadius: 12,
@@ -423,21 +368,7 @@ const styles = StyleSheet.create({
     marginTop: 25,
     gap: 10,
   },
-
-  buttonText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 16,
-  },
-
-  vazioContainer: {
-    alignItems: "center",
-    marginTop: 60,
-    gap: 10,
-  },
-
-  vazioTexto: {
-    color: "#666",
-    fontSize: 16,
-  },
+  buttonText: { color: "#fff", fontWeight: "bold", fontSize: 16 },
+  vazioContainer: { alignItems: "center", marginTop: 60, gap: 10 },
+  vazioTexto: { color: "#666", fontSize: 16 },
 });
