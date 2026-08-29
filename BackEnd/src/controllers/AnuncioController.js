@@ -325,8 +325,39 @@ export async function excluirAnuncio(req, res) {
       });
     }
 
-    await prisma.anuncio.delete({
-      where: { id: idAnuncio },
+    // Remover dependências que possam violar FK antes de apagar o anúncio.
+    await prisma.$transaction(async (tx) => {
+      // 1) Encontrar solicitações vinculadas ao anúncio
+      const solicitacoes = await tx.solicitacaoServico.findMany({ where: { anuncioId: idAnuncio }, select: { id: true } });
+      const solicitacaoIds = solicitacoes.map(s => s.id);
+
+      if (solicitacaoIds.length > 0) {
+        // 2) Deletar notificações vinculadas às solicitações
+        await tx.notificacao.deleteMany({ where: { solicitacaoId: { in: solicitacaoIds } } });
+
+        // 3) Encontrar conversas geradas a partir dessas solicitações
+        const conversas = await tx.conversa.findMany({ where: { solicitacaoId: { in: solicitacaoIds } }, select: { id: true } });
+        const conversaIds = conversas.map(c => c.id);
+
+        if (conversaIds.length > 0) {
+          // 4) Deletar mensagens da(s) conversa(s)
+          await tx.mensagem.deleteMany({ where: { conversaId: { in: conversaIds } } });
+          // 5) Deletar as conversas
+          await tx.conversa.deleteMany({ where: { id: { in: conversaIds } } });
+        }
+
+        // 6) Deletar as solicitações
+        await tx.solicitacaoServico.deleteMany({ where: { id: { in: solicitacaoIds } } });
+      }
+
+      // 7) Deletar serviços em andamento vinculados ao anúncio
+      await tx.servicoEmAndamento.deleteMany({ where: { anuncioId: idAnuncio } });
+
+      // 8) Deletar notificações genéricas que mencionem este anúncio não vinculadas por solicitacaoId
+      // (não existe coluna anuncioId em Notificacao; se houver mensagens textuais que mencionam, não deletamos automaticamente)
+
+      // 9) Finalmente, deletar o anúncio
+      await tx.anuncio.delete({ where: { id: idAnuncio } });
     });
 
     return res.status(200).json({ mensagem: "Anúncio excluído com sucesso." });

@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import prisma from "../prisma/Client.js"; 
+import prisma from "../prisma/Client.js";
 
 /**
  * Busca os dados do usuário logado para preencher a tela de Perfil.
@@ -400,7 +400,7 @@ export async function redefinirSenha(req, res) {
  */
 export async function excluirConta(req, res) {
   try {
-    const idUsuario = Number(req.params.id || req.user?.id);
+    const idUsuario = Number(req.params.id || req.usuarioId || req.user?.id);
 
     if (!idUsuario) {
       return res.status(400).json({ erro: "ID do usuário não informado." });
@@ -414,7 +414,34 @@ export async function excluirConta(req, res) {
       return res.status(404).json({ erro: "Usuário não encontrado." });
     }
 
-    // Remove a foto de perfil do disco, se existir
+    // Vamos remover em transação para evitar erros de chave estrangeira.
+    // Primeiro coletamos anúncios do usuário para apagar arquivos no disco.
+    const anuncios = await prisma.anuncio.findMany({ where: { usuarioId: idUsuario }, select: { id: true, foto: true } });
+    const anuncioIds = anuncios.map((a) => a.id);
+
+    await prisma.$transaction(async (tx) => {
+      // Apaga serviços em andamento ligados aos anúncios do usuário
+      if (anuncioIds.length) {
+        await tx.servicoEmAndamento.deleteMany({ where: { anuncioId: { in: anuncioIds } } });
+        await tx.solicitacaoServico.deleteMany({ where: { anuncioId: { in: anuncioIds } } });
+        await tx.notificacao.deleteMany({ where: { solicitacaoId: { in: anuncioIds } } });
+        await tx.anuncio.deleteMany({ where: { id: { in: anuncioIds } } });
+      }
+
+      // Apaga solicitações enviadas pelo usuário (em outros anúncios)
+      await tx.solicitacaoServico.deleteMany({ where: { solicitanteId: idUsuario } });
+
+      // Apaga serviços em andamento onde o usuário é prestador ou contratante
+      await tx.servicoEmAndamento.deleteMany({ where: { OR: [ { prestadorId: idUsuario }, { contratanteId: idUsuario } ] } });
+
+      // Apaga notificações do usuário
+      await tx.notificacao.deleteMany({ where: { usuarioId: idUsuario } });
+
+      // Por fim, apaga o usuário
+      await tx.usuario.delete({ where: { id: idUsuario } });
+    });
+
+    // Remove arquivos do disco (foto do usuário e fotos de anúncios)
     if (usuarioExistente.foto) {
       const caminhoFoto = path.resolve(usuarioExistente.foto);
       fs.unlink(caminhoFoto, (err) => {
@@ -424,8 +451,15 @@ export async function excluirConta(req, res) {
       });
     }
 
-    await prisma.usuario.delete({
-      where: { id: idUsuario },
+    anuncios.forEach((a) => {
+      if (a.foto) {
+        const caminho = path.resolve(a.foto);
+        fs.unlink(caminho, (err) => {
+          if (err && err.code !== "ENOENT") {
+            console.error("Erro ao remover foto do anúncio ao excluir usuário:", err);
+          }
+        });
+      }
     });
 
     return res.status(200).json({ mensagem: "Conta excluída com sucesso." });

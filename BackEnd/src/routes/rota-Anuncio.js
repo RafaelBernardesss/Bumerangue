@@ -6,7 +6,7 @@ import {
   atualizarAnuncio,
   excluirAnuncio,
 } from "../controllers/anuncioController.js";
-import { criarSolicitacao } from "../controllers/solicitacaoController.js";
+import { solicitarServico } from "../controllers/SolicitacaoController.js";
 import uploadFotoAnuncio from "../middlewares/uploadFotoAnuncio.js";
 import autenticar from "../middlewares/autenticar.js";
 
@@ -17,6 +17,6 @@ router.get("/", listarAnuncios);
 router.get("/:id", buscarAnuncio);
 router.put("/:id", uploadFotoAnuncio.single("foto"), atualizarAnuncio);
 router.delete("/:id", excluirAnuncio);
-router.post("/:id/solicitar", autenticar, criarSolicitacao);
+router.post("/:id/solicitar", autenticar, solicitarServico);
 
 export default router;

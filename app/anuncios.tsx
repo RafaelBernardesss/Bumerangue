@@ -1,21 +1,21 @@
-import React, { useState, useCallback } from "react";
+import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useFocusEffect } from "@react-navigation/native";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import React, { useCallback, useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Image,
   Alert,
   BackHandler,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { useFocusEffect } from "@react-navigation/native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Ionicons } from "@expo/vector-icons";
 import Header from "../components/Hearder";
 
-const API_URL = "http://192.168.137.70:3000";
+const API_URL = "http://192.168.137.111:3000";
 
 type Anuncio = {
   id: number;
@@ -280,7 +280,15 @@ export default function Home() {
             </View>
           ) : (
             meusAnuncios.map((item) => {
-              const { label, cor } = CONFIG_STATUS[item.status];
+              const statusKey = item.status as keyof typeof CONFIG_STATUS;
+              if (!(statusKey in CONFIG_STATUS)) {
+                console.warn(`[anuncios] anúncio ${item.id} com status inválido:`, item.status);
+              }
+              const statusCfg = CONFIG_STATUS[statusKey] ?? {
+                label: (item.status ?? "").toString().toUpperCase(),
+                cor: "#666",
+              };
+              const { label, cor } = statusCfg;
               const foto = urlFoto(item.foto);
 
               return (
@@ -386,7 +394,7 @@ export default function Home() {
           <Ionicons name="add" size={36} color="#00AFFF" />
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => router.push("/Chat")}>
+        <TouchableOpacity onPress={() => router.push("/contatos")}>
           <Ionicons name="chatbubble-outline" size={30} color="#999" />
         </TouchableOpacity>
 

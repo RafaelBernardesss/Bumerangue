@@ -1,22 +1,22 @@
-import React, { useState, useCallback } from "react";
+import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useFocusEffect } from "@react-navigation/native";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import React, { useCallback, useState } from "react";
 import {
-  View,
+  ActivityIndicator,
+  Alert,
+  Image,
+  ScrollView,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  ScrollView,
-  StyleSheet,
-  Alert,
-  Image,
-  ActivityIndicator,
+  View,
 } from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { useFocusEffect } from "@react-navigation/native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Ionicons } from "@expo/vector-icons";
 import Header from "../components/HeaderEscolha";
 
-const API_URL = "http://192.168.137.70:3000";
+const API_URL = "http://192.168.137.111:3000";
 
 type Anuncio = {
   id: number;
@@ -41,13 +41,50 @@ function urlFoto(caminho: string | null) {
   return `${API_URL}/${caminho.replace(/\\/g, "/")}`;
 }
 
-// Mock dos serviços do próprio usuário logado, que podem ser oferecidos em troca.
-// TODO: substituir por dados reais vindos da API/perfil do usuário.
-const MEUS_SERVICOS = [
-  { id: "m1", nome: "Edição de Vídeos Curtos" },
-  { id: "m2", nome: "Criação de Posts para Instagram" },
-  { id: "m3", nome: "Aulas de Inglês Online" },
-];
+// Lê o token e o id do usuário do AsyncStorage tentando várias chaves possíveis,
+// já que telas de login diferentes costumam salvar com nomes diferentes
+// (ex: "token" vs "userToken", "usuarioId" vs "userId" vs "id").
+async function lerSessao() {
+  const chavesToken = ["token", "userToken", "accessToken", "authToken"];
+  const chavesUsuarioId = ["usuarioId", "userId", "id", "usuario_id"];
+
+  let token: string | null = null;
+  for (const chave of chavesToken) {
+    const valor = await AsyncStorage.getItem(chave);
+    if (valor) {
+      token = valor;
+      break;
+    }
+  }
+
+  let usuarioId: string | null = null;
+  for (const chave of chavesUsuarioId) {
+    const valor = await AsyncStorage.getItem(chave);
+    if (valor) {
+      usuarioId = valor;
+      break;
+    }
+  }
+
+  // Fallback: alguns logins salvam um objeto "usuario" inteiro em JSON.
+  if (!usuarioId) {
+    const usuarioJson = await AsyncStorage.getItem("usuario") || await AsyncStorage.getItem("usuarioLogado");
+    if (usuarioJson) {
+      try {
+        const usuarioObj = JSON.parse(usuarioJson);
+        if (usuarioObj?.id) usuarioId = String(usuarioObj.id);
+      } catch (e) {
+        // ignora se não for JSON válido
+      }
+    }
+  }
+
+  if (__DEV__) {
+    console.log("[lerSessao] token:", token, "| usuarioId:", usuarioId);
+  }
+
+  return { token, usuarioId };
+}
 
 export default function DetalheAnuncio() {
   const router = useRouter();
@@ -57,7 +94,7 @@ export default function DetalheAnuncio() {
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState(false);
 
-  const [servicoEscolhido, setServicoEscolhido] = useState<string | null>(null);
+  const [servicoOferecido, setServicoOferecido] = useState("");
   const [mensagem, setMensagem] = useState("");
   const [enviando, setEnviando] = useState(false);
 
@@ -91,14 +128,13 @@ export default function DetalheAnuncio() {
   );
 
   async function enviarProposta() {
-    if (!servicoEscolhido) {
-      Alert.alert("Escolha um serviço", "Selecione qual serviço você quer oferecer em troca.");
+    if (!servicoOferecido.trim()) {
+      Alert.alert("Informe um serviço", "Escreva qual serviço você quer oferecer em troca.");
       return;
     }
     if (!anuncio) return;
 
-    const token = await AsyncStorage.getItem("token");
-    const solicitanteId = await AsyncStorage.getItem("usuarioId");
+    const { token, usuarioId: solicitanteId } = await lerSessao();
 
     if (!token || !solicitanteId) {
       Alert.alert("Sessão expirada", "Faça login novamente.");
@@ -106,18 +142,17 @@ export default function DetalheAnuncio() {
       return;
     }
 
-    // Não deixa o usuário mandar proposta pro próprio anúncio
     if (Number(solicitanteId) === anuncio.usuarioId) {
       Alert.alert("Não permitido", "Você não pode enviar uma proposta para o seu próprio anúncio.");
       return;
     }
 
-    const nomeServico = MEUS_SERVICOS.find((s) => s.id === servicoEscolhido)?.nome;
+    const nomeServico = servicoOferecido.trim();
 
     try {
       setEnviando(true);
 
-      const resposta = await fetch(`${API_URL}/anuncios/${anuncio.id}/solicitacoes`, {
+      const resposta = await fetch(`${API_URL}/anuncios/${anuncio.id}/solicitar`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -129,10 +164,17 @@ export default function DetalheAnuncio() {
         }),
       });
 
-      const dados = await resposta.json();
+      let dados: any = null;
+      try {
+        dados = await resposta.json();
+      } catch (e) {
+        // resposta pode não ser JSON
+      }
 
       if (!resposta.ok) {
-        throw new Error(dados.erro || "Não foi possível enviar a proposta.");
+        const erroMsg = dados?.erro || dados?.mensagem || `Erro ${resposta.status}`;
+        console.log("[enviarProposta] resposta não ok:", resposta.status, dados);
+        throw new Error(erroMsg || "Não foi possível enviar a proposta.");
       }
 
       Alert.alert(
@@ -236,29 +278,18 @@ export default function DetalheAnuncio() {
 
         <Text style={styles.secaoTitulo}>Propor troca de serviço</Text>
         <Text style={styles.secaoSubtitulo}>
-          Escolha qual dos seus serviços você quer oferecer em troca deste anúncio.
+          Escreva qual serviço você quer oferecer em troca deste anúncio.
         </Text>
 
-        {MEUS_SERVICOS.map((servico) => {
-          const selecionado = servico.id === servicoEscolhido;
-          return (
-            <TouchableOpacity
-              key={servico.id}
-              style={[styles.opcaoServico, selecionado && styles.opcaoServicoAtiva]}
-              onPress={() => setServicoEscolhido(servico.id)}
-              disabled={enviando}
-            >
-              <Ionicons
-                name={selecionado ? "radio-button-on" : "radio-button-off"}
-                size={20}
-                color={selecionado ? "#27A7FF" : "#888"}
-              />
-              <Text style={[styles.opcaoServicoTexto, selecionado && styles.opcaoServicoTextoAtivo]}>
-                {servico.nome}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
+        <Text style={styles.label}>Serviço oferecido</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Ex: Edição de vídeos curtos"
+          placeholderTextColor="#888"
+          value={servicoOferecido}
+          onChangeText={setServicoOferecido}
+          editable={!enviando}
+        />
 
         <Text style={styles.label}>Mensagem (opcional)</Text>
         <TextInput

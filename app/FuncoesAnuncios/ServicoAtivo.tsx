@@ -1,21 +1,21 @@
-import React, { useState, useCallback } from "react";
+import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useFocusEffect } from "@react-navigation/native";
+import { useRouter } from "expo-router";
+import React, { useCallback, useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Image,
   ActivityIndicator,
   Alert,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import { useRouter } from "expo-router";
-import { useFocusEffect } from "@react-navigation/native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Ionicons } from "@expo/vector-icons";
 import Flecha from "../../components/HeaderFlecha";
 
-const API_URL = "http://192.168.137.70:3000";
+const API_URL = "http://192.168.137.111:3000";
 
 type Anuncio = {
   id: number;
@@ -131,7 +131,15 @@ export default function ServicosAtivos() {
   }
 
   function renderAnuncio(item: Anuncio) {
-    const { label, cor } = CONFIG_STATUS[item.status];
+    const statusKey = item.status as keyof typeof CONFIG_STATUS;
+    if (!(statusKey in CONFIG_STATUS)) {
+      console.warn(`[ServicoAtivo] anúncio ${item.id} com status inválido:`, item.status);
+    }
+    const statusCfg = CONFIG_STATUS[statusKey] ?? {
+      label: (item.status ?? "").toString().toUpperCase(),
+      cor: "#666",
+    };
+    const { label, cor } = statusCfg;
     const foto = urlFoto(item.foto);
     const excluindo = excluindoId === item.id;
 

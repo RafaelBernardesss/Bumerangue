@@ -1,17 +1,17 @@
-import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Image, Alert, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useNavigation } from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
 import * as Location from "expo-location";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
-import { useNavigation } from "@react-navigation/native";
+import React, { useEffect, useState } from "react";
+import { ActivityIndicator, Alert, Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 //components
 import Header from "../components/HeaderEscolha";
 
-const API_URL = "http://192.168.137.70:3000";
+const API_URL = "http://192.168.137.111:3000";
 
 // Mapa de nome completo do estado -> sigla (UF), pra converter o que o GPS retorna
 const ESTADOS_UF: Record<string, string> = {
@@ -370,14 +370,20 @@ export default function Perfil() {
 
     try {
       setSalvando(true);
+      const token = await AsyncStorage.getItem("token");
+
       const resposta = await fetch(`${API_URL}/usuarios/${idUsuario}`, {
         method: "DELETE",
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
       });
 
-      const dados = await resposta.json();
+      let dados: any = null;
+      try {
+        dados = await resposta.json();
+      } catch (e) {}
 
       if (!resposta.ok) {
-        throw new Error(dados.erro || "Erro ao excluir a conta.");
+        throw new Error(dados?.erro || dados?.mensagem || `Erro ${resposta.status}`);
       }
 
       await AsyncStorage.removeItem("usuarioId");

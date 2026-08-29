@@ -24,6 +24,10 @@ model Usuario {
   solicitacoesEnviadas SolicitacaoServico[] @relation("SolicitacoesEnviadas")
   servicosPrestados    ServicoEmAndamento[] @relation("ServicosPrestados")
   servicosContratados  ServicoEmAndamento[] @relation("ServicosContratados")
+  // Conversas e mensagens (novos modelos)
+  conversasDono Conversa[] @relation("ConversaDono")
+  conversasSolicitante Conversa[] @relation("ConversaSolicitante")
+  mensagensEnviadas Mensagem[] @relation("MensagemRemetente")
 }
 
 model Categoria {
@@ -73,6 +77,8 @@ model SolicitacaoServico {
   solicitante   Usuario  @relation("SolicitacoesEnviadas", fields: [solicitanteId], references: [id])
   solicitanteId Int
   notificacoes  Notificacao[]
+  // relação opcional com Conversa (uma solicitação pode gerar uma conversa)
+  conversa      Conversa? @relation("SolicitacaoConversa")
 }
 
 model ServicoEmAndamento {
@@ -85,4 +91,26 @@ model ServicoEmAndamento {
   prestadorId   Int
   contratante   Usuario  @relation("ServicosContratados", fields: [contratanteId], references: [id])
   contratanteId Int
+}
+
+model Conversa {
+  id            Int      @id @default(autoincrement())
+  solicitacao   SolicitacaoServico? @relation("SolicitacaoConversa", fields: [solicitacaoId], references: [id])
+  solicitacaoId Int? @unique
+  dono          Usuario  @relation("ConversaDono", fields: [donoId], references: [id])
+  donoId        Int
+  solicitante   Usuario  @relation("ConversaSolicitante", fields: [solicitanteId], references: [id])
+  solicitanteId Int
+  mensagens     Mensagem[]
+  criadoEm      DateTime @default(now())
+}
+
+model Mensagem {
+  id          Int      @id @default(autoincrement())
+  conversa    Conversa @relation(fields: [conversaId], references: [id])
+  conversaId  Int
+  remetente   Usuario  @relation("MensagemRemetente", fields: [remetenteId], references: [id])
+  remetenteId Int
+  texto       String
+  criadoEm    DateTime @default(now())
 }

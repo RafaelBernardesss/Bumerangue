@@ -1,80 +1,141 @@
+import { enviarPushNotification } from "../middlewares/PushNotifications.js";
 import prisma from "../prisma/Client.js";
-import { enviarPushNotification } from "../services/pushNotifications.js";
 
 /**
- * Cria uma solicitação de serviço para um anúncio, gera a notificação no
- * banco e envia um push notification pro celular do dono do anúncio.
- * Rota sugerida: POST /anuncios/:anuncioId/solicitar
- * Requer usuário autenticado (req.usuarioId).
+ * Cria uma solicitação de troca de serviço para um anúncio, e gera
+ * a notificação correspondente para o dono do anúncio.
+ * Rota: POST /anuncios/:id/solicitar
+ * Body esperado: { "servicoOferecido": string, "mensagem": string }
  */
-export async function criarSolicitacao(req, res) {
+export async function solicitarServico(req, res) {
   try {
-    const idAnuncio = Number(req.params.anuncioId);
-    const idSolicitante = req.usuarioId;
+    const anuncioId = Number(req.params.id);
+    const { servicoOferecido, mensagem } = req.body;
+    const solicitanteId = req.usuarioId;
 
-    if (!idAnuncio) {
+    // Validações adicionais para evitar erros inesperados
+    if (!solicitanteId) {
+      return res.status(401).json({ erro: "Usuário não autenticado." });
+    }
+
+    if (!anuncioId) {
       return res.status(400).json({ erro: "ID do anúncio não informado." });
     }
 
+    if (!servicoOferecido || !servicoOferecido.trim()) {
+      return res.status(400).json({ erro: "Informe o serviço oferecido em troca." });
+    }
+
     const anuncio = await prisma.anuncio.findUnique({
-      where: { id: idAnuncio },
-      include: { usuario: true }, // precisa do usuario pra pegar o expoPushToken
+      where: { id: anuncioId },
+      include: { usuario: true },
     });
 
     if (!anuncio) {
       return res.status(404).json({ erro: "Anúncio não encontrado." });
     }
 
+    if (anuncio.usuarioId === solicitanteId) {
+      return res.status(400).json({ erro: "Você não pode enviar uma proposta para o seu próprio anúncio." });
+    }
+
     if (anuncio.status !== "ativo") {
-      return res.status(400).json({ erro: "Este anúncio não está mais disponível." });
+      return res.status(400).json({ erro: "Este anúncio não está disponível no momento." });
     }
 
-    if (anuncio.usuarioId === idSolicitante) {
-      return res.status(400).json({ erro: "Você não pode solicitar seu próprio anúncio." });
+    const solicitante = await prisma.usuario.findUnique({ where: { id: solicitanteId } });
+
+    // Log para diagnóstico: quem pede, qual anúncio e dados enviados
+    console.log(`[Solicitacao] solicitanteId=${solicitanteId} anuncioId=${anuncioId} servico="${servicoOferecido?.slice(0,100)}" mensagemLen=${mensagem?.length || 0}`);
+
+    const solicitacao = await prisma.$transaction(async (tx) => {
+      // Criar solicitação apenas com campos existentes no schema
+      const novaSolicitacao = await tx.solicitacaoServico.create({
+        data: {
+          anuncioId,
+          solicitanteId,
+          status: "pendente",
+        },
+      });
+
+      // Mensagem da notificação inclui o serviço oferecido e a mensagem opcional
+      const textoNotificacao = `${solicitante?.nome ?? "Alguém"} quer trocar "${(servicoOferecido || "")}" pelo seu serviço "${anuncio.titulo}".${mensagem ? "\nMensagem: " + mensagem.trim() : ""}`;
+
+      try {
+        await tx.notificacao.create({
+          data: {
+            usuarioId: anuncio.usuarioId,
+            tipo: "nova_solicitacao",
+            mensagem: textoNotificacao,
+            lida: false,
+            solicitacaoId: novaSolicitacao.id,
+          },
+        });
+      } catch (e) {
+        console.warn("Falha ao criar notificação vinculada (possível unique), criando sem solicitacaoId:", e.message);
+        await tx.notificacao.create({
+          data: {
+            usuarioId: anuncio.usuarioId,
+            tipo: "nova_solicitacao",
+            mensagem: textoNotificacao,
+            lida: false,
+          },
+        });
+      }
+
+      // Também notifica o solicitante que a solicitação foi enviada e está pendente
+      try {
+        await tx.notificacao.create({
+          data: {
+            usuarioId: solicitanteId,
+            tipo: "info",
+            mensagem: `Sua solicitação para o anúncio "${anuncio.titulo}" foi enviada e está pendente.`,
+            lida: false,
+            solicitacaoId: novaSolicitacao.id,
+          },
+        });
+      } catch (e) {
+        console.warn("Falha ao criar notificação do solicitante vinculada (possível unique), criando sem solicitacaoId:", e.message);
+        await tx.notificacao.create({
+          data: {
+            usuarioId: solicitanteId,
+            tipo: "info",
+            mensagem: `Sua solicitação para o anúncio "${anuncio.titulo}" foi enviada e está pendente.`,
+            lida: false,
+          },
+        });
+      }
+
+      return novaSolicitacao;
+    });
+
+    // Enviar push notifications (fora da transação)
+    try {
+      const dono = await prisma.usuario.findUnique({ where: { id: anuncio.usuarioId } });
+      const solicitanteUser = await prisma.usuario.findUnique({ where: { id: solicitanteId } });
+
+      const textoNotificacao = `${solicitante?.nome ?? "Alguém"} quer trocar "${(servicoOferecido || "")}" pelo seu serviço "${anuncio.titulo}".${mensagem ? "\nMensagem: " + mensagem.trim() : ""}`;
+
+      if (dono?.expoPushToken) {
+        enviarPushNotification(dono.expoPushToken, "Nova solicitação de serviço", textoNotificacao, {
+          tipo: "nova_solicitacao",
+          solicitacaoId: solicitacao.id,
+        });
+      }
+
+      if (solicitanteUser?.expoPushToken) {
+        enviarPushNotification(solicitanteUser.expoPushToken, "Solicitação enviada", `Sua solicitação para o anúncio \"${anuncio.titulo}\" foi enviada e está pendente.`, {
+          tipo: "info",
+          solicitacaoId: solicitacao.id,
+        });
+      }
+    } catch (e) {
+      console.error("Erro ao enviar push notifications de solicitação:", e);
     }
-
-    const solicitacaoExistente = await prisma.solicitacaoServico.findFirst({
-      where: { anuncioId: idAnuncio, solicitanteId: idSolicitante, status: "pendente" },
-    });
-
-    if (solicitacaoExistente) {
-      return res.status(409).json({ erro: "Você já enviou uma solicitação para este anúncio." });
-    }
-
-    const solicitacao = await prisma.solicitacaoServico.create({
-      data: {
-        anuncioId: idAnuncio,
-        solicitanteId: idSolicitante,
-        status: "pendente",
-      },
-    });
-
-    // Notificação vai só pro dono do anúncio, nunca pra quem solicitou
-    const notificacao = await prisma.notificacao.create({
-      data: {
-        usuarioId: anuncio.usuarioId,
-        solicitacaoId: solicitacao.id,
-        tipo: "nova_solicitacao",
-        mensagem: `Alguém quer contratar o serviço "${anuncio.titulo}".`,
-      },
-    });
-
-    // Push no celular do dono do anúncio. "data" leva o id da solicitação
-    // pra o app saber qual notificação abrir quando o usuário tocar no push.
-    await enviarPushNotification(
-      anuncio.usuario.expoPushToken,
-      "Nova solicitação de serviço",
-      `Alguém quer contratar o serviço "${anuncio.titulo}".`,
-      { notificacaoId: notificacao.id, solicitacaoId: solicitacao.id }
-    );
-
-    return res.status(201).json({
-      mensagem: "Solicitação enviada com sucesso.",
-      solicitacao,
-      notificacao,
-    });
+    return res.status(201).json({ mensagem: "Proposta enviada com sucesso.", solicitacao });
   } catch (erro) {
-    console.error("Erro ao criar solicitação:", erro);
-    return res.status(500).json({ erro: "Erro interno ao criar a solicitação." });
+    console.error("Erro ao solicitar serviço:", erro);
+    // Retorna detalhes reduzidos para diagnóstico (remova em produção)
+    return res.status(500).json({ erro: "Erro interno ao enviar a proposta.", details: erro.message, stack: (erro.stack || "").split("\n").slice(0,5) });
   }
 }

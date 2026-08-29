@@ -1,38 +1,34 @@
+import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useFocusEffect } from "@react-navigation/native";
+import Constants from "expo-constants";
+import * as Device from "expo-device";
+import * as Notifications from "expo-notifications";
+import { useRouter } from "expo-router";
 import React, { useCallback, useRef, useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
   ActivityIndicator,
-  Platform,
+  Alert,
   LogBox,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import { useRouter } from "expo-router";
-import { useFocusEffect } from "@react-navigation/native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Ionicons } from "@expo/vector-icons";
-import * as Notifications from "expo-notifications";
-import * as Device from "expo-device";
-import Constants from "expo-constants";
 import Flecha from "../components/HeaderFlecha";
 
-LogBox.ignoreLogs([
-  "expo-notifications: Android Push notifications",
-]);
+LogBox.ignoreLogs(["expo-notifications: Android Push notifications"]);
 
-const API_URL = "http://192.168.137.70:3000";
+const API_URL = "http://192.168.137.111:3000";
 
 const isExpoGo = Constants.executionEnvironment === "storeClient";
 
-// ...resto do arquivo continua igual
-
-// Faz o push aparecer como banner mesmo com o app aberto
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
-    shouldShowBanner: true, // mostra o banner com o app aberto
-    shouldShowList: true, // mostra na lista/central de notificações
+    shouldShowBanner: true,
+    shouldShowList: true,
     shouldPlaySound: true,
     shouldSetBadge: false,
   }),
@@ -54,7 +50,6 @@ type Notificacao = {
   solicitacao?: Solicitacao | null;
 };
 
-// Ícone/cor por tipo, mantendo a paleta usada no resto do app
 const CONFIG_TIPO: Record<string, { icone: keyof typeof Ionicons.glyphMap; cor: string }> = {
   nova_solicitacao: { icone: "briefcase-outline", cor: "#00AFFF" },
   info: { icone: "notifications-outline", cor: "#FFB800" },
@@ -77,6 +72,7 @@ export default function Notificacoes() {
   const [notificacoes, setNotificacoes] = useState<Notificacao[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [respondendoId, setRespondendoId] = useState<number | null>(null);
+  const [excluindoId, setExcluindoId] = useState<number | null>(null);
   const registrouPush = useRef(false);
 
   async function buscarNotificacoes() {
@@ -94,12 +90,9 @@ export default function Notificacoes() {
     }
   }
 
-  // Pede permissão, pega o Expo Push Token e manda salvar no back-end.
-  // Só faz isso uma vez por sessão da tela.
   async function registrarPushToken() {
     if (registrouPush.current || !Device.isDevice) return;
 
-    // Push remoto não funciona no Expo Go a partir do SDK 53 — só em development build
     if (isExpoGo) {
       console.log(
         "Push notifications não disponíveis no Expo Go (SDK 53+). Use um development build."
@@ -117,7 +110,7 @@ export default function Notificacoes() {
       statusFinal = status;
     }
 
-    if (statusFinal !== "granted") return; // usuário negou, segue sem push
+    if (statusFinal !== "granted") return;
 
     const projectId =
       Constants.expoConfig?.extra?.eas?.projectId ?? Constants.easConfig?.projectId;
@@ -152,7 +145,6 @@ export default function Notificacoes() {
       buscarNotificacoes();
       registrarPushToken();
 
-      // Recarrega a lista quando chega um push com o app aberto
       const subscription = Notifications.addNotificationReceivedListener(() => {
         buscarNotificacoes();
       });
@@ -182,7 +174,6 @@ export default function Notificacoes() {
         return;
       }
 
-      // Atualiza local sem precisar buscar tudo de novo
       setNotificacoes((prev) =>
         prev.map((n) =>
           n.solicitacao?.id === solicitacaoId
@@ -208,13 +199,68 @@ export default function Notificacoes() {
     }
   }
 
+  function confirmarExclusao(item: Notificacao) {
+    Alert.alert("Remover notificação", "Deseja remover esta notificação?", [
+      { text: "Cancelar", style: "cancel" },
+      {
+        text: "Remover",
+        style: "destructive",
+        onPress: () => excluirNotificacao(item.id),
+      },
+    ]);
+  }
+
+  async function excluirNotificacao(id: number) {
+    setExcluindoId(id);
+    try {
+      const token = await AsyncStorage.getItem("token");
+      const resposta = await fetch(`${API_URL}/notificacoes/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!resposta.ok) {
+        const dados = await resposta.json();
+        console.error(dados.erro);
+        return;
+      }
+
+      setNotificacoes((prev) => prev.filter((n) => n.id !== id));
+    } catch (erro) {
+      console.error("Erro ao excluir notificação:", erro);
+    } finally {
+      setExcluindoId(null);
+    }
+  }
+
+  function abrirConversaSeDisponivel(item: Notificacao) {
+    const m = item.mensagem.match(/CONV:(\d+)/);
+    if (m) {
+      const id = Number(m[1]);
+      router.push(`/Chat?id=${id}`);
+      return true;
+    }
+    return false;
+  }
+
   function renderNotificacao(item: Notificacao) {
     const { icone, cor } = CONFIG_TIPO[item.tipo] ?? CONFIG_TIPO.info;
     const solicitacaoPendente =
       item.tipo === "nova_solicitacao" && item.solicitacao?.status === "pendente";
+    const excluindo = excluindoId === item.id;
 
     return (
-      <View key={item.id} style={[styles.card, !item.lida && styles.cardNaoLida]}>
+      <TouchableOpacity
+        key={item.id}
+        activeOpacity={0.9}
+        onPress={() => {
+          if (!abrirConversaSeDisponivel(item)) {
+            setNotificacoes((prev) => prev.map((n) => (n.id === item.id ? { ...n, lida: true } : n)));
+          }
+        }}
+        style={{ marginBottom: 12 }}
+      >
+        <View style={[styles.card, !item.lida && styles.cardNaoLida]}>
         <View style={[styles.iconWrapper, { backgroundColor: `${cor}22` }]}>
           <Ionicons name={icone} size={22} color={cor} />
         </View>
@@ -225,6 +271,18 @@ export default function Notificacoes() {
               {item.tipo === "nova_solicitacao" ? "Nova solicitação de serviço" : "Notificação"}
             </Text>
             {!item.lida && <View style={styles.dot} />}
+
+            <TouchableOpacity
+              onPress={() => confirmarExclusao(item)}
+              disabled={excluindo}
+              style={styles.botaoExcluirIcone}
+            >
+              {excluindo ? (
+                <ActivityIndicator size="small" color="#666" />
+              ) : (
+                <Ionicons name="close" size={18} color="#666" />
+              )}
+            </TouchableOpacity>
           </View>
           <Text style={styles.cardDescricao} numberOfLines={2}>
             {item.mensagem}
@@ -261,14 +319,35 @@ export default function Notificacoes() {
           {item.tipo === "nova_solicitacao" && item.solicitacao?.status === "recusada" && (
             <Text style={styles.statusRecusado}>Recusada</Text>
           )}
+                  {/* Mostrar badge de status para qualquer notificação que tenha uma solicitacao vinculada */}
+                  {item.solicitacao && (
+                    <View style={styles.statusBadgeWrapper}>
+                      <Text
+                        style={[
+                          styles.statusBadgeText,
+                          item.solicitacao.status === "pendente"
+                            ? styles.statusPendente
+                            : item.solicitacao.status === "aceita"
+                            ? styles.statusAceito
+                            : styles.statusRecusado,
+                        ]}
+                      >
+                        {item.solicitacao.status === "pendente"
+                          ? "Pendente"
+                          : item.solicitacao.status === "aceita"
+                          ? "Aceita"
+                          : "Recusada"}
+                      </Text>
+                    </View>
+                  )}
         </View>
       </View>
+      </TouchableOpacity>
     );
   }
 
   return (
     <View style={styles.container}>
-      {/* CABEÇALHO */}
       <View style={styles.header}>
         <Flecha></Flecha>
 
@@ -376,6 +455,10 @@ const styles = StyleSheet.create({
     backgroundColor: "#00AFFF",
     marginLeft: 8,
   },
+  botaoExcluirIcone: {
+    padding: 4,
+    marginLeft: 8,
+  },
   cardDescricao: {
     color: "#999",
     fontSize: 13,
@@ -429,6 +512,23 @@ const styles = StyleSheet.create({
     color: "#FF3B6F",
     fontSize: 13,
     fontWeight: "600",
+  },
+  statusPendente: {
+    color: "#FFD166",
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  statusBadgeWrapper: {
+    marginTop: 10,
+  },
+  statusBadgeText: {
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 12,
+    overflow: "hidden",
+    alignSelf: "flex-start",
+    fontWeight: "700",
+    fontSize: 12,
   },
   emptyState: {
     alignItems: "center",

@@ -50,7 +50,7 @@ export default function Cadastro() {
   async function fazerLogin() {
     try {
       const response = await fetch(
-        "http://192.168.137.70:3000/usuarios/login",
+        "http://192.168.137.111:3000/usuarios/login",
         {
           method: "POST",
           headers: {
@@ -68,6 +68,8 @@ export default function Cadastro() {
       if (response.ok) {
         // Salva o id do usuário (usado pelo Perfil e outras telas) - chave correta: "usuarioId"
         await AsyncStorage.setItem("usuarioId", String(data.usuario.id));
+        // Salva o token JWT (usado em todas as rotas autenticadas, ex: notificações)
+        await AsyncStorage.setItem("token", data.token);
         // Mantém o objeto completo também, caso precise em outras telas
         await AsyncStorage.setItem("usuarioLogado", JSON.stringify(data.usuario));
 
