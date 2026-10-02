@@ -1,0 +1,70 @@
+{
+  "expo": {
+    "name": "bumerangue",
+    "slug": "bumerangue",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/logo.png",
+    "scheme": "bumerangue",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.rafaelbernardessposito.bumerangue",
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "O Bumerangue usa o microfone para gravar áudios no chat."
+      }
+    },
+    "android": {
+      "package": "com.rafaelbernardessposito.bumerangue",
+      "permissions": ["RECORD_AUDIO"],
+      "softwareKeyboardLayoutMode": "resize",
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": false,
+      "adaptiveIcon": {
+        "backgroundColor": "#0B0B0B",
+        "foregroundImage": "./assets/logo.png"
+      }
+    },
+    "web": {
+      "output": "static",
+      "favicon": "./assets/logo.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/logo.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#0B0B0B"
+        }
+      ],
+      "expo-font",
+      "expo-web-browser",
+      "expo-notifications",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "O Bumerangue precisa acessar suas fotos para enviar imagens no perfil, nos anúncios e no chat de serviço."
+        }
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "O Bumerangue usa o microfone para gravar áudios no chat."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "O Bumerangue usa a sua localização para preencher cidade e estado."
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": false
+    }
+  }
+}

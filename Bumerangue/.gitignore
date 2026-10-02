@@ -1,0 +1,16 @@
+node_modules/
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+*.log
+.env
+.env.local
+
+# back end
+BackEnd/node_modules/
+BackEnd/.env
+BackEnd/dev.db
+BackEnd/dev.db-journal
+BackEnd/uploads/
+BackEnd/src/generated/

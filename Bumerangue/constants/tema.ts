@@ -1,0 +1,16 @@
+export const cores = {
+  fundo: "#0B0B0B",        
+  card: "#0D1324",         
+  cardBorda: "#161D2E",    
+  campo: "#141C2E",        
+  borda: "#202B42",       
+  primaria: "#00AFFF",     
+  textoNaPrimaria: "#000", 
+  texto: "#FFFFFF",
+  textoSecundario: "#9CA3AF",
+  textoMudo: "#666666",
+  sucesso: "#00FF44",
+  aviso: "#FFB800",
+  erro: "#FF3B3B",
+  offline: "#6B7280",
+};

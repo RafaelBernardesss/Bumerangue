@@ -1,0 +1,33 @@
+{
+  "name": "bumerangue-backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "API do Bumerangue (Express + Prisma 7 + SQLite)",
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "scripts": {
+    "dev": "tsx watch src/server.js",
+    "start": "tsx src/server.js",
+    "generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:setup": "prisma generate && prisma db push",
+    "db:studio": "prisma studio",
+    "postinstall": "prisma generate",
+    "criptografar-mensagens": "tsx scripts/criptografarMensagens.js"
+  },
+  "dependencies": {
+    "@prisma/adapter-better-sqlite3": "7.10.0",
+    "@prisma/client": "7.10.0",
+    "bcrypt": "^6.0.0",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.0",
+    "express": "^5.1.0",
+    "multer": "^2.0.2"
+  },
+  "devDependencies": {
+    "prisma": "7.10.0",
+    "tsx": "^4.20.0"
+  }
+}
