@@ -2,18 +2,7 @@ import prisma from "../prisma/client.js";
 import { apagarArquivoUpload, caminhoUpload } from "../utils/uploadImagem.js";
 import { enviarPush } from "../utils/push.js";
 
-/**
- * Fluxo da finalização de uma troca:
- *  1. Os dois enviam uma foto do serviço.
- *  2. Quem enviou a ÚLTIMA foto confirma (ou cancela) primeiro.
- *  3. Depois o outro confirma. Com as duas confirmações a troca é finalizada
- *     e o anúncio passa para "trocado".
- *  Cancelar apaga as fotos e as confirmações: os dois precisam refazer o processo.
- *
- * usuarioA = dono do anúncio | usuarioB = quem fez a proposta aceita.
- */
 
-// Descobre a troca a partir dos dois usuários (não importa quem é quem na requisição)
 async function acharTroca(anuncioId, usuarioId, outroUsuarioId) {
   const anuncio = await prisma.anuncio.findUnique({
     where: { id: anuncioId },
@@ -34,7 +23,7 @@ async function acharTroca(anuncioId, usuarioId, outroUsuarioId) {
   return { anuncio, troca };
 }
 
-// Visão da troca do ponto de vista de quem está olhando (usuarioId)
+
 function visao(troca, usuarioId) {
   const souA = troca.usuarioAId === usuarioId;
 
@@ -45,8 +34,6 @@ function visao(troca, usuarioId) {
   const euSouUltimo = troca.ultimoEnviouId === usuarioId;
   const ambasFotos = Boolean(minhaFoto && fotoDoOutro);
 
-  // é a minha vez se as fotos estão enviadas, eu ainda não confirmei,
-  // e (fui o último a enviar a foto OU o outro já confirmou)
   const minhaVez =
     !troca.finalizada && ambasFotos && !minhaConfirmou && (euSouUltimo || outroConfirmou);
 
@@ -75,7 +62,6 @@ async function nomeDoUsuario(id) {
 }
 
 class TrocaController {
-  // GET /troca/:anuncioId/:usuarioId/:outroUsuarioId
   async Status(req, res) {
     try {
       const anuncioId = Number(req.params.anuncioId);
@@ -96,7 +82,6 @@ class TrocaController {
     }
   }
 
-  // POST /troca/enviar-foto (multipart: foto, anuncioId, usuarioId, outroUsuarioId)
   async EnviarFoto(req, res) {
     const descartarArquivo = () => req.file && apagarArquivoUpload(req.file.path);
 
@@ -156,7 +141,6 @@ class TrocaController {
     }
   }
 
-  // POST /troca/confirmar { anuncioId, usuarioId, outroUsuarioId }
   async Confirmar(req, res) {
     try {
       const { anuncioId, usuarioId, outroUsuarioId } = lerIds(req.body);
@@ -185,7 +169,6 @@ class TrocaController {
       const souA = troca.usuarioAId === usuarioId;
       const nome = await nomeDoUsuario(usuarioId);
 
-      // se o outro já tinha confirmado, a troca termina agora
       if (v.outroConfirmou) {
         await prisma.$transaction([
           prisma.troca.update({
@@ -225,7 +208,6 @@ class TrocaController {
     }
   }
 
-  // POST /troca/cancelar { anuncioId, usuarioId, outroUsuarioId }
   async Cancelar(req, res) {
     try {
       const { anuncioId, usuarioId, outroUsuarioId } = lerIds(req.body);
@@ -242,7 +224,6 @@ class TrocaController {
         return res.status(400).json({ erro: "Essa troca já foi finalizada e não pode ser cancelada." });
       }
 
-      // zera tudo: fotos, confirmações e quem enviou por último
       await prisma.troca.update({
         where: { id: troca.id },
         data: {
@@ -271,7 +252,6 @@ class TrocaController {
     }
   }
 
-  // GET /troca/pendentes/:usuarioId -> lista da aba "Trocas" das notificações
   async Pendentes(req, res) {
     try {
       const usuarioId = Number(req.params.usuarioId);

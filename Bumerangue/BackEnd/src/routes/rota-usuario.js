@@ -22,7 +22,6 @@ import uploadFoto from "../middlewares/uploadFoto.js";
 
 const router = Router();
 
-// Middleware que envolve o multer e trata os erros dele como JSON
 function tratarUploadFoto(req, res, next) {
   uploadFoto.single("foto")(req, res, (err) => {
     if (err instanceof multer.MulterError) {

@@ -68,7 +68,6 @@ model Mensagem {
   tipo String @default("texto")
   data_hora DateTime @default(now())
 
-  // Apagar conversa "só para mim": cada lado marca a sua própria cópia como apagada
   apagadaRemetente    Boolean @default(false)
   apagadaDestinatario Boolean @default(false)
 
@@ -123,11 +122,9 @@ model Troca {
 model Avaliacao {
   id Int @id @default(autoincrement())
 
-  // A troca pode ser apagada junto com o anúncio, mas a avaliação continua existindo
   trocaId Int?
   troca Troca? @relation(fields: [trocaId], references: [id], onDelete: SetNull)
 
-  // Cópia dos dados do anúncio para o histórico não depender dele
   anuncioId Int?
   anuncioTitulo String?
 

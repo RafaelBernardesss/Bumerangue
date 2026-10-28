@@ -5,13 +5,11 @@ import { criptografar, descriptografar } from '../utils/criptografia.js'
 
 const TIPOS_VALIDOS = ['texto', 'foto', 'audio']
 
-// Devolve a mensagem para o app: conteúdo já descriptografado e sem os campos internos
 function paraResposta(m) {
   const { apagadaRemetente, apagadaDestinatario, ...resto } = m
   return { ...resto, conteudo: descriptografar(m.conteudo) }
 }
 
-// Mensagens que o usuário já apagou "só para ele" não voltam na conversa dele
 function naoApagadaPara(usuarioId) {
   return {
     NOT: {
@@ -50,7 +48,6 @@ class MensagemController {
       const mensagem = await prisma.mensagem.create({
         data: {
           conteudo: criptografar(conteudo),
-          // arquivos (foto/áudio) têm rotas próprias; aqui só texto
           tipo: 'texto',
           remetenteId: Number(remetenteId),
           destinatarioId: Number(destinatarioId),
@@ -146,8 +143,6 @@ class MensagemController {
     }
   }
 
-  // Apaga a conversa SÓ PARA QUEM PEDIU. A outra pessoa continua vendo tudo.
-  // Quando os dois lados já apagaram, as mensagens (e os arquivos) saem de vez do banco.
   async ApagarConversa(req, res) {
     try {
       const { anuncioId, usuarioId, outroUsuarioId } = req.params
@@ -159,19 +154,16 @@ class MensagemController {
         return res.status(400).json({ erro: 'anuncioId, usuarioId e outroUsuarioId são obrigatórios' })
       }
 
-      // mensagens que EU enviei -> some do meu lado (remetente)
       await prisma.mensagem.updateMany({
         where: { anuncioId: idAnuncio, remetenteId: eu, destinatarioId: outro },
         data: { apagadaRemetente: true },
       })
 
-      // mensagens que EU recebi -> some do meu lado (destinatário)
       await prisma.mensagem.updateMany({
         where: { anuncioId: idAnuncio, remetenteId: outro, destinatarioId: eu },
         data: { apagadaDestinatario: true },
       })
-
-      // limpeza: o que os dois já apagaram não precisa mais existir
+      
       const apagadasPorAmbos = await prisma.mensagem.findMany({
         where: {
           anuncioId: idAnuncio,

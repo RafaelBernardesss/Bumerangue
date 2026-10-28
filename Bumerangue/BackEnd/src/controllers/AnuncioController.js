@@ -8,7 +8,6 @@ function texto(valor) {
 }
 
 class AnuncioController {
-  // GET /anuncios?status=ativo&usuarioId=1&categoriaId=2
   async Listar(req, res) {
     try {
       const { status, usuarioId, categoriaId } = req.query;
@@ -31,7 +30,6 @@ class AnuncioController {
     }
   }
 
-  // GET /anuncios/:id
   async Detalhar(req, res) {
     try {
       const id = Number(req.params.id);
@@ -51,7 +49,6 @@ class AnuncioController {
     }
   }
 
-  // POST /anuncios  (multipart: titulo, descricao, preferencia, disponibilidade, categoriaId, usuarioId, foto)
   async Criar(req, res) {
     try {
       const titulo = texto(req.body?.titulo);
@@ -85,7 +82,6 @@ class AnuncioController {
           preferencia,
           disponibilidade: disponibilidade || null,
           foto: req.file ? caminhoUpload("anuncios", req.file.filename) : null,
-          // o anúncio usa a localização cadastrada no perfil
           cidade: usuario.cidade,
           estado: usuario.estado,
           usuarioId,
@@ -102,7 +98,6 @@ class AnuncioController {
     }
   }
 
-  // PUT /anuncios/:id  (multipart; a foto é opcional: sem foto nova mantém a atual)
   async Atualizar(req, res) {
     try {
       const id = Number(req.params.id);
@@ -150,7 +145,6 @@ class AnuncioController {
         include: { usuario: USUARIO_PUBLICO, categoria: true },
       });
 
-      // troca de foto: apaga a antiga do disco
       if (req.file && atual.foto) apagarArquivoUpload(atual.foto);
 
       return res.status(200).json({ anuncio });
@@ -161,7 +155,6 @@ class AnuncioController {
     }
   }
 
-  // DELETE /anuncios/:id
   async Excluir(req, res) {
     try {
       const id = Number(req.params.id);
@@ -182,7 +175,6 @@ class AnuncioController {
         });
       }
 
-      // fotos das trocas (se existirem) e do anúncio saem do disco
       const trocas = await prisma.troca.findMany({
         where: { anuncioId: id },
         select: { usuarioAFoto: true, usuarioBFoto: true },
@@ -203,7 +195,6 @@ class AnuncioController {
     }
   }
 
-  // GET /anuncios/servicos-realizados?usuarioId=1  -> trocas finalizadas do usuário
   async ServicosRealizados(req, res) {
     try {
       const usuarioId = Number(req.query.usuarioId);

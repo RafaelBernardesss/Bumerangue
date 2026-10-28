@@ -4,7 +4,7 @@ import { enviarPush } from "../utils/push.js";
 const USUARIO_PUBLICO = { select: { id: true, nome: true, foto: true } };
 
 class PropostaController {
-  // POST /propostas  { anuncioId, propostoPor, mensagem }
+
   async Criar(req, res) {
     try {
       const anuncioId = Number(req.body?.anuncioId);
@@ -55,7 +55,6 @@ class PropostaController {
     }
   }
 
-  // GET /propostas/recebidas?usuarioId=1  -> propostas feitas nos MEUS anúncios
   async Recebidas(req, res) {
     try {
       const usuarioId = Number(req.query.usuarioId);
@@ -77,7 +76,6 @@ class PropostaController {
     }
   }
 
-  // GET /propostas/enviadas?usuarioId=1  -> propostas que EU fiz
   async Enviadas(req, res) {
     try {
       const usuarioId = Number(req.query.usuarioId);
@@ -100,7 +98,6 @@ class PropostaController {
     }
   }
 
-  // PUT /propostas/:id/responder  { status: "aceita" | "recusada" }
   async Responder(req, res) {
     try {
       const id = Number(req.params.id);
@@ -128,7 +125,6 @@ class PropostaController {
           return res.status(409).json({ erro: "Esse anúncio já tem uma troca em andamento." });
         }
 
-        // aceita a proposta, cria a troca e tira o anúncio da lista de disponíveis
         await prisma.$transaction([
           prisma.proposta.update({ where: { id }, data: { status: "aceita" } }),
           prisma.troca.upsert({

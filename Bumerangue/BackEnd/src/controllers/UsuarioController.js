@@ -5,7 +5,6 @@ import prisma from "../prisma/client.js";
 import { estaOnline, limiteOnline } from "../utils/online.js";
 import { apagarArquivoUpload } from "../utils/uploadImagem.js";
 
-// Senhas novas são salvas com bcrypt; contas antigas ainda podem estar em texto puro.
 async function senhaConfere(digitada, salva) {
   if (typeof salva === "string" && salva.startsWith("$2")) {
     return bcrypt.compare(digitada, salva);
@@ -69,12 +68,12 @@ export async function atualizarFotoPerfil(req, res) {
     });
 
     if (!usuarioExistente) {
-      // Remove o arquivo enviado, já que o usuário não existe
+
       fs.unlink(req.file.path, () => { });
       return res.status(404).json({ erro: "Usuário não encontrado." });
     }
 
-    // Se já existia uma foto anterior, apaga o arquivo antigo do disco
+
     if (usuarioExistente.foto) {
       const caminhoAntigo = path.resolve(usuarioExistente.foto);
       fs.unlink(caminhoAntigo, (err) => {
@@ -399,7 +398,6 @@ export async function excluirConta(req, res) {
       return res.status(404).json({ erro: "Usuário não encontrado." });
     }
 
-    // fotos que vão sumir junto com a conta (anúncios e trocas)
     const anuncios = await prisma.anuncio.findMany({
       where: { usuarioId: idUsuario },
       select: { foto: true },
@@ -409,8 +407,6 @@ export async function excluirConta(req, res) {
       select: { id: true, anuncioId: true, usuarioAFoto: true, usuarioBFoto: true },
     });
 
-    // anúncios, propostas e mensagens saem por cascata; trocas e avaliações não têm relação
-    // direta com o usuário no banco, então removemos aqui
     await prisma.$transaction([
       prisma.avaliacao.deleteMany({
         where: { OR: [{ avaliadorId: idUsuario }, { avaliadoId: idUsuario }] },
@@ -487,7 +483,6 @@ export async function listarContatos(req, res) {
       return res.status(400).json({ erro: "ID do usuário não informado." });
     }
 
-    // Propostas aceitas onde o usuário é o DONO do anúncio
     const comoAnunciante = await prisma.proposta.findMany({
       where: {
         status: "aceita",
@@ -499,7 +494,6 @@ export async function listarContatos(req, res) {
       orderBy: { criadoEm: "desc" },
     });
 
-    // Propostas aceitas onde o usuário é QUEM PROPÔS
     const comoProponente = await prisma.proposta.findMany({
       where: {
         status: "aceita",
@@ -515,13 +509,11 @@ export async function listarContatos(req, res) {
       orderBy: { criadoEm: "desc" },
     });
 
-    // Usamos um mapa para garantir contatos únicos e armazenamos também o anuncioId
     const mapaContatos = new Map();
 
     for (const proposta of comoAnunciante) {
       const outraPessoa = proposta.usuario;
       if (outraPessoa.id !== idUsuario) {
-        // guarda o anuncioId da proposta mais recente para esse contato
         mapaContatos.set(outraPessoa.id, {
           id: outraPessoa.id,
           nome: outraPessoa.nome,
@@ -536,7 +528,6 @@ export async function listarContatos(req, res) {
     for (const proposta of comoProponente) {
       const outraPessoa = proposta.anuncio.usuario;
       if (outraPessoa.id !== idUsuario) {
-        // Se já temos esse contato, preferimos a proposta mais recente (ordem já é por criadoEm desc)
         if (!mapaContatos.has(outraPessoa.id)) {
           mapaContatos.set(outraPessoa.id, {
             id: outraPessoa.id,
@@ -569,11 +560,6 @@ export async function listarContatos(req, res) {
   }
 }
 
-
-/**
- * O app chama essa rota a cada ~30s enquanto está aberto.
- * Quem fez "ping" nos últimos 70s aparece como online.
- */
 export async function registrarPing(req, res) {
   try {
     const idUsuario = Number(req.params.id);
@@ -598,7 +584,6 @@ export async function registrarPing(req, res) {
   }
 }
 
-/** Marca o usuário como offline (ao sair do app ou da conta). */
 export async function marcarOffline(req, res) {
   try {
     const idUsuario = Number(req.params.id);
@@ -619,7 +604,6 @@ export async function marcarOffline(req, res) {
   }
 }
 
-/** Números do menu inicial: cadastrados, online agora e trocas concluídas. */
 export async function estatisticas(req, res) {
   try {
     const [total, online, trocas] = await Promise.all([
@@ -635,7 +619,6 @@ export async function estatisticas(req, res) {
   }
 }
 
-/** Lista de usuários para a tela de administração. */
 export async function listarUsuarios(req, res) {
   try {
     const usuarios = await prisma.usuario.findMany({

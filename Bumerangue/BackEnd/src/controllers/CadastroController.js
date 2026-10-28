@@ -7,7 +7,6 @@ class UsuarioController {
         try {
             const { nome, email, cpf, senha, dataNascimento } = req.body;
 
-            // Verificar campos vazios
             if (!nome || !email || !cpf || !senha) {
                 return res.status(400).json({
                     erro: "Preencha todos os campos"
@@ -16,7 +15,6 @@ class UsuarioController {
 
             const cpfLimpo = cpf.replace(/\D/g, "");
 
-            // Data de nascimento obrigatória e só para maiores de 18 anos
             if (!dataNascimento) {
                 return res.status(400).json({
                     erro: "Informe a sua data de nascimento"
@@ -36,7 +34,6 @@ class UsuarioController {
                 });
             }
 
-            // Verificar email existente
             const emailExiste = await prisma.usuario.findUnique({
                 where: {
                     email
@@ -48,7 +45,6 @@ class UsuarioController {
                 });
             }
 
-            // Verificar CPF existente
             const cpfExiste = await prisma.usuario.findUnique({
                 where: {
                     cpf: cpfLimpo
@@ -62,7 +58,6 @@ class UsuarioController {
 
             const senhaHash = await bcrypt.hash(req.body.senha, 10);
 
-            // Criar usuário
             const usuario = await prisma.usuario.create({
                 data: {
                     nome,
@@ -73,9 +68,6 @@ class UsuarioController {
                 }
             });
 
-            
-
-            // nunca devolve o hash da senha para o app
             const { senha: _senha, ...usuarioSemSenha } = usuario;
 
             return res.status(201).json({

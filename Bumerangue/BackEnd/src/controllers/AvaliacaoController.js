@@ -2,7 +2,6 @@ import prisma from '../prisma/client.js'
 
 class AvaliacaoController {
 
-  // Cria uma avaliação (só depois da troca finalizada)
   async Criar(req, res) {
     try {
       const { anuncioId, avaliadorId, avaliadoId, nota, comentario } = req.body
@@ -60,7 +59,6 @@ class AvaliacaoController {
       const avaliacao = await prisma.avaliacao.create({
         data: {
           trocaId: troca.id,
-          // guardado para a avaliação continuar existindo mesmo se o anúncio for removido
           anuncioId: anuncio.id,
           anuncioTitulo: anuncio.titulo,
           avaliadorId: Number(avaliadorId),
@@ -77,7 +75,6 @@ class AvaliacaoController {
     }
   }
 
-  // Média e total de avaliações de vários usuários: GET /avaliacoes/resumo?ids=1,2,3
   async Resumo(req, res) {
     try {
       const ids = String(req.query.ids || '')
@@ -114,7 +111,6 @@ class AvaliacaoController {
     }
   }
 
-  // Verifica se eu já avaliei essa troca: GET /avaliacoes/troca/:anuncioId/:avaliadorId/:avaliadoId
   async JaAvaliei(req, res) {
     try {
       const { anuncioId, avaliadorId, avaliadoId } = req.params
